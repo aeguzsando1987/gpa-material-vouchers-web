@@ -41,6 +41,9 @@ export interface ProductSearchResult {
   id: number;
   name: string;
   code: string | null;
+  part_number: string | null;
+  description: string | null;
+  category: ProductCategory | null;
   unit_of_measure: string;
   usage_count: number;
 }

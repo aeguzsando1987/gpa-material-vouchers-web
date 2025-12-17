@@ -143,6 +143,7 @@ export default function VoucherCreateForm() {
               unit_of_measure: detail.unit_of_measure,
               serial_number: detail.serial_number,
               part_number: detail.part_number,
+              category: detail.category, // ✅ Pasar categoría para manual entry
               notes: detail.notes,
             });
 

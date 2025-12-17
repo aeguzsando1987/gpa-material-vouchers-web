@@ -14,6 +14,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   Table,
   TableBody,
   TableCell,
@@ -33,6 +40,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
+import { ProductCategory } from '@/lib/types/product';
+
 // Tipo para línea de detalle (en memoria, sin IDs de BD)
 export interface VoucherDetailDraft {
   line_number: number;
@@ -43,6 +52,7 @@ export interface VoucherDetailDraft {
   unit_of_measure: string;
   serial_number?: string;
   part_number?: string;
+  category?: ProductCategory; // Categoría para manual entry
   notes?: string;
 }
 
@@ -59,6 +69,7 @@ const detailSchema = z.object({
   unit_of_measure: z.string().min(1, 'Unidad de medida requerida'),
   serial_number: z.string().max(100).optional(),
   part_number: z.string().max(100).optional(),
+  category: z.nativeEnum(ProductCategory).optional(), // Categoría para manual entry
   notes: z.string().max(500).optional(),
 });
 
@@ -73,6 +84,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
     handleSubmit,
     reset,
     getValues,
+    watch,
     formState: { errors },
   } = useForm<DetailFormData>({
     resolver: zodResolver(detailSchema),
@@ -81,6 +93,9 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
       unit_of_measure: 'PZA',
     },
   });
+
+  // Watch product_id to conditionally show category selector
+  const currentProductId = watch('product_id');
 
   // Calcular siguiente número de línea disponible
   const getNextAvailableLineNumber = (): number => {
@@ -110,6 +125,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
       unit_of_measure: data.unit_of_measure,
       serial_number: data.serial_number || undefined,
       part_number: data.part_number || undefined,
+      category: data.category || undefined, // ✅ Incluir categoría
       notes: data.notes || undefined,
     };
 
@@ -138,6 +154,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
             unit_of_measure: data.unit_of_measure,
             serial_number: data.serial_number || undefined,
             part_number: data.part_number || undefined,
+            category: data.category || undefined, // ✅ Incluir categoría
             notes: data.notes || undefined,
           }
         : d
@@ -193,8 +210,10 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
       ...currentValues,
       product_id: product.id, // ✅ CLAVE: Pasar ID del producto al backend
       item_name: product.name,
+      item_description: product.description || currentValues.item_description || '',
       unit_of_measure: product.unit_of_measure,
-      part_number: product.code || currentValues.part_number || '',
+      part_number: product.part_number || currentValues.part_number || '', // ✅ FIX: Usar part_number correcto
+      category: product.category || currentValues.category, // Autocompletar categoría
     });
 
     console.log('✅ DEBUG: Form reset with product data. Product ID:', product.id);
@@ -392,6 +411,45 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
                   onKeyDown={handleKeyDown}
                 />
               </div>
+
+              {/* Categoría - Solo mostrar cuando NO hay producto seleccionado (entrada manual) */}
+              {!currentProductId && (
+                <div className="space-y-2">
+                  <Label htmlFor="category">
+                    Categoría *
+                    <span className="text-xs text-muted-foreground ml-2">
+                      (Solo para entrada manual)
+                    </span>
+                  </Label>
+                  <Select
+                    value={watch('category') || ''}
+                    onValueChange={(value) => {
+                      const formValues = getValues();
+                      reset({
+                        ...formValues,
+                        category: value as ProductCategory,
+                      });
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona categoría" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={ProductCategory.TOOL}>Herramienta</SelectItem>
+                      <SelectItem value={ProductCategory.MACHINE}>Máquina</SelectItem>
+                      <SelectItem value={ProductCategory.COMPUTER_EQUIPMENT}>Equipo de Cómputo</SelectItem>
+                      <SelectItem value={ProductCategory.FINISHED_PRODUCT}>Producto Terminado</SelectItem>
+                      <SelectItem value={ProductCategory.RAW_MATERIAL}>Materia Prima</SelectItem>
+                      <SelectItem value={ProductCategory.SPARE_PART}>Refacción</SelectItem>
+                      <SelectItem value={ProductCategory.CONSUMABLE}>Consumible</SelectItem>
+                      <SelectItem value={ProductCategory.OTHER}>Otro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.category && (
+                    <p className="text-sm text-red-500">{errors.category.message}</p>
+                  )}
+                </div>
+              )}
 
               {/* Descripción */}
               <div className="space-y-2 md:col-span-2">

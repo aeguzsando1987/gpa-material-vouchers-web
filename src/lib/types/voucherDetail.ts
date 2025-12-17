@@ -24,6 +24,8 @@ export interface VoucherDetail {
   updated_at?: string;
 }
 
+import { ProductCategory } from './product';
+
 export interface VoucherDetailCreateInput {
   voucher_id: number;
   line_number: number; // 1-20
@@ -33,6 +35,7 @@ export interface VoucherDetailCreateInput {
   unit_of_measure?: string; // Default: "PZA"
   serial_number?: string;
   part_number?: string;
+  category?: ProductCategory; // Opcional - para auto-creación en cache
   notes?: string;
 
   // Validación línea por línea
