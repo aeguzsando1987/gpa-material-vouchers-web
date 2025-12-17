@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { getVoucherTypeName, getVoucherStatusName } from '@/lib/types/voucher';
 import VoucherDetailForm from '@/components/forms/VoucherDetailForm';
 import VoucherDetailList from '@/components/vouchers/VoucherDetailList';
+import VoucherActions from '@/components/vouchers/VoucherActions';
 import { useState } from 'react';
 
 export default function VoucherDetailPage() {
@@ -90,6 +91,9 @@ export default function VoucherDetailPage() {
           {getVoucherStatusName(voucher.status)}
         </Badge>
       </div>
+
+      {/* Botones de Acción */}
+      <VoucherActions voucher={voucher} />
 
       {/* Información del Voucher */}
       <Card>
