@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -85,7 +84,6 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
     setValue,
     watch,
     control,
-    reset,
     formState: { errors, isDirty },
   } = useForm<VoucherEditFormData>({
     resolver: zodResolver(voucherEditSchema),
@@ -114,13 +112,13 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
         voucher_type: data.form_voucher_type === 'ENTRY' ? 'ENTRY' : 'EXIT',
         with_return: data.form_voucher_type === 'EXIT_WITH_RETURN',
         company_id: data.company_id,
-        origin_branch_id: data.origin_branch_id || null,
-        destination_branch_id: data.destination_branch_id || null,
-        outer_destination: data.outer_destination || null,
+        origin_branch_id: data.origin_branch_id || undefined,
+        destination_branch_id: data.destination_branch_id || undefined,
+        outer_destination: data.outer_destination || undefined,
         is_intercompany: data.is_intercompany,
-        estimated_return_date: data.estimated_return_date || null,
-        notes: data.notes || null,
-        internal_notes: data.internal_notes || null,
+        estimated_return_date: data.estimated_return_date || undefined,
+        notes: data.notes || undefined,
+        internal_notes: data.internal_notes || undefined,
       };
 
       await updateVoucher.mutateAsync({
@@ -364,7 +362,7 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
       <div className="flex gap-4 justify-end">
         <Button
           type="button"
-          variant="outline"
+          variant="secondary"
           onClick={() => router.push(`/my-vouchers/${voucher.id}`)}
           disabled={updateVoucher.isPending}
         >
