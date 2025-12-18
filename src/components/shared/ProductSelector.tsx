@@ -176,7 +176,7 @@ export default function ProductSelector({
                 <button
                   key={product.id}
                   type="button"
-                  className="w-full px-4 py-3 hover:bg-accent transition-colors flex items-start gap-3 text-left"
+                  className="w-full px-4 py-3 bg-background hover:bg-accent transition-colors flex items-start gap-3 text-left border-b border-border last:border-0"
                   onClick={() => handleProductSelect(product)}
                 >
                   <Package className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />

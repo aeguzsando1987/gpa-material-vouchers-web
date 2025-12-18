@@ -136,7 +136,18 @@ export default function VoucherDetailsEditor({ details, onChange, readOnly = fal
     console.log('📝 DEBUG: Updated details after add:', updatedDetails);
 
     onChange(updatedDetails);
-    reset();
+    // Reset explícito de TODOS los campos para limpiar product_id
+    reset({
+      product_id: undefined,
+      item_name: '',
+      item_description: '',
+      quantity: 1,
+      unit_of_measure: 'PZA',
+      serial_number: '',
+      part_number: '',
+      category: undefined,
+      notes: '',
+    });
     setShowForm(false);
   };
 
@@ -194,7 +205,18 @@ export default function VoucherDetailsEditor({ details, onChange, readOnly = fal
   const handleCancel = () => {
     setShowForm(false);
     setEditingLine(null);
-    reset();
+    // Reset explícito de TODOS los campos para limpiar product_id
+    reset({
+      product_id: undefined,
+      item_name: '',
+      item_description: '',
+      quantity: 1,
+      unit_of_measure: 'PZA',
+      serial_number: '',
+      part_number: '',
+      category: undefined,
+      notes: '',
+    });
   };
 
   // Manejar selección de producto desde cache
