@@ -113,6 +113,14 @@ export default function VoucherCreateForm() {
         with_return: data.form_voucher_type === 'EXIT_WITH_RETURN',
       } as any;
 
+      // Convertir datetime-local a ISO 8601 para el backend
+      if (apiData.estimated_return_date) {
+        // datetime-local da formato "2025-12-18T14:30"
+        // Backend necesita ISO: "2025-12-18T14:30:00.000Z" o "2025-12-18T14:30:00"
+        const dateObj = new Date(apiData.estimated_return_date);
+        apiData.estimated_return_date = dateObj.toISOString();
+      }
+
       // Remover el campo temporal
       delete apiData.form_voucher_type;
 
