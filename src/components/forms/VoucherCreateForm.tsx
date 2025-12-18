@@ -47,18 +47,17 @@ const voucherCreateSchema = z.object({
   message: 'Fecha de retorno estimada requerida para salida con retorno',
   path: ['estimated_return_date'],
 }).refine((data) => {
-  // Si estimated_return_date existe, debe ser fecha futura
+  // Si estimated_return_date existe, debe ser igual o posterior a hoy
   if (data.estimated_return_date) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const now = new Date();
     const returnDate = new Date(data.estimated_return_date);
-    if (returnDate <= today) {
+    if (returnDate < now) {
       return false;
     }
   }
   return true;
 }, {
-  message: 'La fecha de retorno debe ser futura',
+  message: 'La fecha y hora de retorno no puede ser en el pasado',
   path: ['estimated_return_date'],
 });
 
@@ -346,10 +345,15 @@ export default function VoucherCreateForm() {
             {/* Fecha de Retorno Estimada - Solo para EXIT_WITH_RETURN */}
             {selectedFormType === 'EXIT_WITH_RETURN' && (
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="estimated_return_date">Fecha de Retorno Estimada *</Label>
+                <Label htmlFor="estimated_return_date">
+                  Fecha y Hora de Retorno Estimada *
+                  <span className="text-sm text-muted-foreground ml-2">
+                    (puede ser el mismo día)
+                  </span>
+                </Label>
                 <Input
                   id="estimated_return_date"
-                  type="date"
+                  type="datetime-local"
                   {...register('estimated_return_date')}
                 />
                 {errors.estimated_return_date && (
