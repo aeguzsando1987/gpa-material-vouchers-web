@@ -141,10 +141,10 @@ export default function ProductSelector({
       {(showResults || showTopProducts) && (
         <Card
           ref={resultsRef}
-          className="absolute z-50 w-full mt-2 max-h-80 overflow-y-auto shadow-lg bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700"
+          className="absolute z-50 w-full mt-2 max-h-80 overflow-y-auto shadow-lg bg-white border-2 border-gray-300"
         >
           {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-4 py-2">
+          <div className="sticky top-0 bg-gray-50 border-b border-gray-300 px-4 py-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               {showTopProducts ? (
                 <>
@@ -164,19 +164,19 @@ export default function ProductSelector({
 
           {/* Loading state */}
           {isLoading && (
-            <div className="flex items-center justify-center py-8 bg-white dark:bg-gray-800">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-8 bg-white">
+              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
             </div>
           )}
 
           {/* Results list */}
           {!isLoading && resultsToShow && resultsToShow.length > 0 && (
-            <div className="py-2 bg-white dark:bg-gray-800">
+            <div className="py-2 bg-white">
               {resultsToShow.map((product) => (
                 <button
                   key={product.id}
                   type="button"
-                  className="w-full px-4 py-3 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-start gap-3 text-left border-b border-gray-200 dark:border-gray-700 last:border-0"
+                  className="w-full px-4 py-3 bg-white hover:bg-blue-50 transition-colors flex items-start gap-3 text-left border-b border-gray-200 last:border-0"
                   onClick={() => handleProductSelect(product)}
                 >
                   <Package className="h-5 w-5 mt-0.5 flex-shrink-0 text-blue-600" />
@@ -206,7 +206,7 @@ export default function ProductSelector({
 
           {/* Empty state */}
           {!isLoading && (!resultsToShow || resultsToShow.length === 0) && (
-            <div className="py-8 text-center text-muted-foreground bg-white dark:bg-gray-800">
+            <div className="py-8 text-center text-gray-500 bg-white">
               <Package className="h-12 w-12 mx-auto mb-2 opacity-50" />
               <p className="text-sm">
                 {showTopProducts
