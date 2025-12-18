@@ -1,26 +1,21 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Plus, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { useVoucher } from '@/hooks/useVouchers';
-import { useVoucherDetails } from '@/hooks/useVoucherDetails';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getVoucherTypeName, getVoucherStatusName } from '@/lib/types/voucher';
-import VoucherDetailForm from '@/components/forms/VoucherDetailForm';
-import VoucherDetailList from '@/components/vouchers/VoucherDetailList';
+import VoucherDetailsManager from '@/components/vouchers/VoucherDetailsManager';
 import VoucherActions from '@/components/vouchers/VoucherActions';
-import { useState } from 'react';
 
 export default function VoucherDetailPage() {
   const params = useParams();
   const router = useRouter();
   const voucherId = parseInt(params.id as string);
-  const [showAddForm, setShowAddForm] = useState(false);
 
   const { data: voucher, isLoading: loadingVoucher, error } = useVoucher(voucherId);
-  const { data: details, isLoading: loadingDetails } = useVoucherDetails(voucherId);
 
   if (loadingVoucher) {
     return (
@@ -50,26 +45,7 @@ export default function VoucherDetailPage() {
     );
   }
 
-  const canAddDetails = voucher.status === 'PENDING';
-  const currentDetailCount = details?.length || 0;
-  const maxDetailsReached = currentDetailCount >= 20;
-
-  // Función para encontrar el siguiente número de línea disponible
-  const getNextAvailableLineNumber = (): number => {
-    if (!details || details.length === 0) return 1;
-
-    // Obtener todos los números de línea existentes
-    const existingLineNumbers = details.map(d => d.line_number).sort((a, b) => a - b);
-
-    // Encontrar el primer número disponible del 1 al 20
-    for (let i = 1; i <= 20; i++) {
-      if (!existingLineNumbers.includes(i)) {
-        return i;
-      }
-    }
-
-    return 21; // Si todos están ocupados (esto no debería pasar)
-  };
+  const canEditDetails = voucher.status === 'PENDING';
 
   return (
     <div className="space-y-6">
@@ -141,80 +117,7 @@ export default function VoucherDetailPage() {
       </Card>
 
       {/* Líneas de Detalle */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>Líneas de Detalle</CardTitle>
-              <CardDescription>
-                {currentDetailCount} de 20 líneas agregadas
-              </CardDescription>
-            </div>
-            {canAddDetails && !maxDetailsReached && !showAddForm && (
-              <Button onClick={() => setShowAddForm(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Agregar Línea
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Formulario para agregar línea */}
-          {showAddForm && canAddDetails && (
-            <VoucherDetailForm
-              voucherId={voucherId}
-              lineNumber={getNextAvailableLineNumber()}
-              onSuccess={() => setShowAddForm(false)}
-              onCancel={() => setShowAddForm(false)}
-            />
-          )}
-
-          {/* Advertencia si alcanzó el máximo */}
-          {maxDetailsReached && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <p className="text-sm text-yellow-800">
-                Has alcanzado el máximo de 20 líneas de detalle para este vale.
-              </p>
-            </div>
-          )}
-
-          {/* Advertencia si el vale no está en PENDING */}
-          {!canAddDetails && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
-                Este vale ya no puede ser modificado porque su estado es {getVoucherStatusName(voucher.status)}.
-              </p>
-            </div>
-          )}
-
-          {/* Lista de líneas */}
-          {loadingDetails ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : details && details.length > 0 ? (
-            <VoucherDetailList
-              details={details}
-              voucherId={voucherId}
-              canEdit={canAddDetails}
-            />
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No hay líneas de detalle agregadas.</p>
-              {canAddDetails && !showAddForm && (
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={() => setShowAddForm(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Agregar Primera Línea
-                </Button>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <VoucherDetailsManager voucherId={voucherId} canEdit={canEditDetails} />
     </div>
   );
 }
