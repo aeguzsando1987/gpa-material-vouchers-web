@@ -170,24 +170,27 @@ export default function VoucherDetailsManager({ voucherId, canEdit }: VoucherDet
 
   // OPCIÓN A: Deshabilitar edición si el vale ya tiene líneas existentes
   // Para evitar conflictos con line_number en el backend
-  if (backendDetails && backendDetails.length > 0) {
-    return (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-        <p className="text-sm text-amber-800 font-medium mb-2">
-          No es posible agregar o modificar líneas en vales que ya tienen detalles
-        </p>
-        <p className="text-sm text-amber-700">
-          Si necesitas modificar este vale, debes eliminarlo completamente y crear uno nuevo.
-          Esta es una limitación temporal del sistema debido a conflictos con el número de línea en la base de datos.
-        </p>
-      </div>
-    );
-  }
+  const hasExistingLines = backendDetails && backendDetails.length > 0;
 
   return (
-    <VoucherDetailsEditor
-      details={draftDetails}
-      onChange={handleDetailsChange}
-    />
+    <div className="space-y-4">
+      {hasExistingLines && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <p className="text-sm text-amber-800 font-medium mb-2">
+            No es posible agregar o modificar líneas en vales que ya tienen detalles
+          </p>
+          <p className="text-sm text-amber-700">
+            Si necesitas modificar este vale, debes eliminarlo completamente y crear uno nuevo.
+            Esta es una limitación temporal del sistema debido a conflictos con el número de línea en la base de datos.
+          </p>
+        </div>
+      )}
+
+      <VoucherDetailsEditor
+        details={draftDetails}
+        onChange={handleDetailsChange}
+        readOnly={hasExistingLines}
+      />
+    </div>
   );
 }

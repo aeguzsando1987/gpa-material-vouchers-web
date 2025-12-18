@@ -59,6 +59,7 @@ export interface VoucherDetailDraft {
 interface VoucherDetailsEditorProps {
   details: VoucherDetailDraft[];
   onChange: (details: VoucherDetailDraft[]) => void;
+  readOnly?: boolean; // Modo solo lectura (sin editar/eliminar/agregar)
 }
 
 const detailSchema = z.object({
@@ -75,7 +76,7 @@ const detailSchema = z.object({
 
 type DetailFormData = z.infer<typeof detailSchema>;
 
-export default function VoucherDetailsEditor({ details, onChange }: VoucherDetailsEditorProps) {
+export default function VoucherDetailsEditor({ details, onChange, readOnly = false }: VoucherDetailsEditorProps) {
   const [showForm, setShowForm] = useState(false);
   const [editingLine, setEditingLine] = useState<number | null>(null);
 
@@ -258,7 +259,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
                   <TableHead>Descripción</TableHead>
                   <TableHead className="w-24">Cantidad</TableHead>
                   <TableHead className="w-24">Unidad</TableHead>
-                  <TableHead className="w-24">Acciones</TableHead>
+                  {!readOnly && <TableHead className="w-24">Acciones</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -271,42 +272,44 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
                     </TableCell>
                     <TableCell>{detail.quantity}</TableCell>
                     <TableCell>{detail.unit_of_measure}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => startEditing(detail)}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button type="button" variant="ghost" size="sm">
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>¿Eliminar línea?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Se eliminará la línea #{detail.line_number}: {detail.item_name}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleDeleteDetail(detail.line_number)}
-                                className="bg-red-500 hover:bg-red-600"
-                              >
-                                Eliminar
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </TableCell>
+                    {!readOnly && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => startEditing(detail)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button type="button" variant="ghost" size="sm">
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>¿Eliminar línea?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Se eliminará la línea #{detail.line_number}: {detail.item_name}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteDetail(detail.line_number)}
+                                  className="bg-red-500 hover:bg-red-600"
+                                >
+                                  Eliminar
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
@@ -315,7 +318,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
         )}
 
         {/* Formulario de agregar/editar */}
-        {(showForm || editingLine !== null) && (
+        {!readOnly && (showForm || editingLine !== null) && (
           <div className="border rounded-lg p-4 space-y-4 bg-muted/50">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold">
@@ -490,7 +493,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
         )}
 
         {/* Botón para mostrar formulario de nueva línea */}
-        {!showForm && editingLine === null && (
+        {!readOnly && !showForm && editingLine === null && (
           <Button
             type="button"
             variant="outline"
@@ -505,7 +508,7 @@ export default function VoucherDetailsEditor({ details, onChange }: VoucherDetai
           </Button>
         )}
 
-        {details.length === 0 && !showForm && (
+        {details.length === 0 && !showForm && !readOnly && (
           <p className="text-sm text-muted-foreground text-center py-8">
             No hay líneas agregadas. Haz clic en &quot;Agregar línea&quot; para comenzar.
           </p>
