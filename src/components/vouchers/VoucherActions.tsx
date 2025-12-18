@@ -113,7 +113,7 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
           <Button
             onClick={handleApproveClick}
             disabled={approveVoucher.isPending}
-            className="bg-green-600 hover:bg-green-700"
+            className="bg-green-600 text-white hover:bg-green-800 transition-colors duration-200 dark:bg-green-500 dark:hover:bg-green-700"
           >
             {approveVoucher.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -128,7 +128,7 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
           <Button
             onClick={handleCancelClick}
             disabled={cancelVoucher.isPending}
-            variant="destructive"
+            className="bg-red-600 text-white hover:bg-red-800 transition-colors duration-200 dark:bg-red-500 dark:hover:bg-red-700"
           >
             {cancelVoucher.isPending ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -140,7 +140,10 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
         )}
 
         {showEditButton && (
-          <Button onClick={handleEditClick} variant="outline">
+          <Button
+            onClick={handleEditClick}
+            className="bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-300 transition-colors duration-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
             <Edit className="h-4 w-4 mr-2" />
             Editar
           </Button>

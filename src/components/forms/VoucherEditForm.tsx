@@ -365,14 +365,14 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
           variant="outline"
           onClick={() => router.push(`/my-vouchers/${voucher.id}`)}
           disabled={updateVoucher.isPending}
-          className="bg-gray-100 text-gray-900 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+          className="bg-gray-100 text-gray-900 border border-gray-300 hover:bg-gray-300 transition-colors duration-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
         >
           Cancelar
         </Button>
         <Button
           type="submit"
           disabled={updateVoucher.isPending || !isDirty}
-          className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+          className="bg-blue-600 text-white hover:bg-blue-800 transition-colors duration-200 dark:bg-blue-500 dark:hover:bg-blue-700"
         >
           {updateVoucher.isPending ? (
             <>
