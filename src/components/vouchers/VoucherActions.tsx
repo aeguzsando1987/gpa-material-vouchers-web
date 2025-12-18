@@ -149,10 +149,10 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
 
       {/* Dialog de confirmación para Aprobar */}
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Aprobar este vale?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-gray-900 dark:text-gray-100">¿Aprobar este vale?</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
               Al aprobar el vale <strong>{voucher.folio}</strong>, este cambiará a estado{' '}
               <strong>APROBADO</strong> y estará listo para validación de salida.
               <br />
@@ -161,13 +161,16 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={approveVoucher.isPending}>
+            <AlertDialogCancel
+              disabled={approveVoucher.isPending}
+              className="bg-gray-100 text-gray-900 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+            >
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleApproveConfirm}
               disabled={approveVoucher.isPending}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
             >
               {approveVoucher.isPending ? (
                 <>
@@ -184,10 +187,10 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
 
       {/* Dialog para Cancelar con razón requerida */}
       <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <DialogContent>
+        <DialogContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle>Cancelar Vale</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-gray-900 dark:text-gray-100">Cancelar Vale</DialogTitle>
+            <DialogDescription className="text-gray-600 dark:text-gray-400">
               Vas a cancelar el vale <strong>{voucher.folio}</strong>. Por favor ingresa
               la razón de cancelación.
             </DialogDescription>
@@ -195,7 +198,7 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="cancellation_reason">
+              <Label htmlFor="cancellation_reason" className="text-gray-900 dark:text-gray-100">
                 Razón de Cancelación *
               </Label>
               <Textarea
@@ -207,7 +210,7 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
                   setReasonError('');
                 }}
                 rows={4}
-                className={reasonError ? 'border-red-500' : ''}
+                className={`bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600 ${reasonError ? 'border-red-500' : ''}`}
               />
               {reasonError && (
                 <p className="text-sm text-red-500">{reasonError}</p>
@@ -224,6 +227,7 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
                 setReasonError('');
               }}
               disabled={cancelVoucher.isPending}
+              className="bg-gray-100 text-gray-900 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
             >
               Cerrar
             </Button>
@@ -231,6 +235,7 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
               variant="destructive"
               onClick={handleCancelConfirm}
               disabled={cancelVoucher.isPending}
+              className="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600"
             >
               {cancelVoucher.isPending ? (
                 <>

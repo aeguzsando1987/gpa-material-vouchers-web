@@ -362,13 +362,18 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
       <div className="flex gap-4 justify-end">
         <Button
           type="button"
-          variant="secondary"
+          variant="outline"
           onClick={() => router.push(`/my-vouchers/${voucher.id}`)}
           disabled={updateVoucher.isPending}
+          className="bg-gray-100 text-gray-900 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={updateVoucher.isPending || !isDirty}>
+        <Button
+          type="submit"
+          disabled={updateVoucher.isPending || !isDirty}
+          className="bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
+        >
           {updateVoucher.isPending ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
