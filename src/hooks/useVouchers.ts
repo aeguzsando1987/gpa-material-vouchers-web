@@ -101,8 +101,22 @@ export function useUpdateVoucher() {
       toast.success('Vale actualizado exitosamente');
     },
     onError: (error: any) => {
-      const message =
-        error.response?.data?.detail || 'Error al actualizar vale';
+      // Manejar errores de validación de Pydantic (array de objetos)
+      let message = 'Error al actualizar vale';
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+
+        // Si es un array de errores de validación (Pydantic)
+        if (Array.isArray(detail)) {
+          message = detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+        }
+        // Si es un string simple
+        else if (typeof detail === 'string') {
+          message = detail;
+        }
+      }
+
       toast.error(message);
     },
   });
@@ -143,8 +157,22 @@ export function useApproveVoucher() {
       toast.success('Vale aprobado exitosamente');
     },
     onError: (error: any) => {
-      const message =
-        error.response?.data?.detail || 'Error al aprobar vale';
+      // Manejar errores de validación de Pydantic (array de objetos)
+      let message = 'Error al aprobar vale';
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+
+        // Si es un array de errores de validación (Pydantic)
+        if (Array.isArray(detail)) {
+          message = detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+        }
+        // Si es un string simple
+        else if (typeof detail === 'string') {
+          message = detail;
+        }
+      }
+
       toast.error(message);
     },
   });
@@ -165,8 +193,22 @@ export function useCancelVoucher() {
       toast.success('Vale cancelado exitosamente');
     },
     onError: (error: any) => {
-      const message =
-        error.response?.data?.detail || 'Error al cancelar vale';
+      // Manejar errores de validación de Pydantic (array de objetos)
+      let message = 'Error al cancelar vale';
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+
+        // Si es un array de errores de validación (Pydantic)
+        if (Array.isArray(detail)) {
+          message = detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+        }
+        // Si es un string simple
+        else if (typeof detail === 'string') {
+          message = detail;
+        }
+      }
+
       toast.error(message);
     },
   });
