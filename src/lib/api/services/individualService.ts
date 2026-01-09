@@ -7,6 +7,21 @@ import {
 
 export const individualService = {
   /**
+   * Obtener lista de todos los individuals con paginación
+   * Endpoint: GET /individuals/
+   */
+  getAll: async (
+    skip: number = 0,
+    limit: number = 100,
+    activeOnly: boolean = true
+  ): Promise<Individual[]> => {
+    const response = await apiClient.get<Individual[]>('/individuals/', {
+      params: { skip, limit, active_only: activeOnly },
+    });
+    return response.data;
+  },
+
+  /**
    * Crear individuo con usuario asociado (transacción atómica)
    * Endpoint: POST /individuals/with-user
    *
