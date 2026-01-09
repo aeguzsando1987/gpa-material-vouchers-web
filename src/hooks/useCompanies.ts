@@ -67,9 +67,19 @@ export function useCreateCompany() {
       toast.success('Empresa creada exitosamente');
     },
     onError: (error: any) => {
-      const message =
-        error.response?.data?.detail || 'Error al crear empresa';
-      toast.error(message);
+      // Manejar errores de validación de Pydantic (422)
+      if (error.response?.status === 422 && Array.isArray(error.response?.data?.detail)) {
+        const validationErrors = error.response.data.detail;
+        const errorMessages = validationErrors.map((err: any) => {
+          const field = err.loc?.[err.loc.length - 1] || 'campo';
+          return `${field}: ${err.msg}`;
+        });
+        toast.error(`Errores de validación:\n${errorMessages.join('\n')}`);
+      } else {
+        const message =
+          error.response?.data?.detail || 'Error al crear empresa';
+        toast.error(typeof message === 'string' ? message : 'Error al crear empresa');
+      }
     },
   });
 }
@@ -89,9 +99,19 @@ export function useUpdateCompany() {
       toast.success('Empresa actualizada exitosamente');
     },
     onError: (error: any) => {
-      const message =
-        error.response?.data?.detail || 'Error al actualizar empresa';
-      toast.error(message);
+      // Manejar errores de validación de Pydantic (422)
+      if (error.response?.status === 422 && Array.isArray(error.response?.data?.detail)) {
+        const validationErrors = error.response.data.detail;
+        const errorMessages = validationErrors.map((err: any) => {
+          const field = err.loc?.[err.loc.length - 1] || 'campo';
+          return `${field}: ${err.msg}`;
+        });
+        toast.error(`Errores de validación:\n${errorMessages.join('\n')}`);
+      } else {
+        const message =
+          error.response?.data?.detail || 'Error al actualizar empresa';
+        toast.error(typeof message === 'string' ? message : 'Error al actualizar empresa');
+      }
     },
   });
 }

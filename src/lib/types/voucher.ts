@@ -170,3 +170,83 @@ export interface ConfirmEntryRequest {
   line_validations: LineValidation[];
   general_observations?: string;
 }
+
+// ==================== LOG TYPES (Audit Trail) ====================
+
+// Enums para estados de logs
+export type EntryStatus = 'COMPLETE' | 'INCOMPLETE' | 'DAMAGED';
+export type ValidationStatus = 'APPROVED' | 'REJECTED' | 'OBSERVATION';
+export type LogType = 'entry_log' | 'out_log';
+
+// Entry Log (Registro de Entrada)
+export interface EntryLog {
+  id: number;
+  voucher_id: number;
+  entry_status: EntryStatus;
+  receiver_id: number;
+  received_by_name: string;
+  missing_items_description?: string;
+  notes?: string;
+  is_active: boolean;
+  created_at: string;
+  created_by?: number;
+}
+
+// Out Log (Registro de Salida)
+export interface OutLog {
+  id: number;
+  voucher_id: number;
+  validation_status: ValidationStatus;
+  scanned_by_id: number;
+  scanned_by_name: string;
+  observations?: string;
+  gps_location?: string;
+  is_active: boolean;
+  created_at: string;
+  created_by?: number;
+}
+
+// Respuesta del endpoint getLogs
+export interface VoucherLogsResponse {
+  voucher_id: number;
+  folio: string;
+  entry_log: EntryLog | null;
+  out_log: OutLog | null;
+}
+
+// Tipo unificado para renderizar en tabla
+export interface LogTableRow {
+  id: number;
+  log_type: LogType;
+  status: EntryStatus | ValidationStatus;
+  responsible_name: string;
+  observations: string;
+  created_at: string;
+}
+
+// Mapeos en español
+export const ENTRY_STATUS_NAMES: Record<EntryStatus, string> = {
+  COMPLETE: 'Completo',
+  INCOMPLETE: 'Incompleto',
+  DAMAGED: 'Dañado',
+};
+
+export const VALIDATION_STATUS_NAMES: Record<ValidationStatus, string> = {
+  APPROVED: 'Aprobado',
+  REJECTED: 'Rechazado',
+  OBSERVATION: 'Con Observaciones',
+};
+
+export const LOG_TYPE_NAMES: Record<LogType, string> = {
+  entry_log: 'Entrada de Material',
+  out_log: 'Validación de Salida',
+};
+
+// Helpers
+export const getEntryStatusName = (status: EntryStatus): string =>
+  ENTRY_STATUS_NAMES[status] || status;
+
+export const getValidationStatusName = (status: ValidationStatus): string =>
+  VALIDATION_STATUS_NAMES[status] || status;
+
+export const getLogTypeName = (type: LogType): string => LOG_TYPE_NAMES[type] || type;

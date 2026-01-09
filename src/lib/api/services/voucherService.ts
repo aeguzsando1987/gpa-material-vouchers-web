@@ -10,8 +10,9 @@ import {
   VoucherSearchResponse,
   VoucherFilters,
   VoucherSearchParams,
-  ValidateExitRequest,    // NUEVO
-  ConfirmEntryRequest,    // NUEVO
+  ValidateExitRequest,
+  ConfirmEntryRequest,
+  VoucherLogsResponse,    // NUEVO - Para logs de auditoría
 } from '@/lib/types/voucher';
 
 export const voucherService = {
@@ -146,14 +147,10 @@ export const voucherService = {
   /**
    * Ver bitácora de logs del voucher
    * Endpoint: GET /vouchers/{voucher_id}/logs
+   * Solo accesible para Admin (1), Manager (2), Supervisor (3)
    */
-  getLogs: async (
-    id: number
-  ): Promise<{
-    entry_log: any | null;
-    out_log: any | null;
-  }> => {
-    const response = await apiClient.get(`/vouchers/${id}/logs`);
+  getLogs: async (id: number): Promise<VoucherLogsResponse> => {
+    const response = await apiClient.get<VoucherLogsResponse>(`/vouchers/${id}/logs`);
     return response.data;
   },
 

@@ -158,23 +158,23 @@ export default function VoucherDetailsManager({ voucherId, canEdit }: VoucherDet
     );
   }
 
-  if (!canEdit) {
-    return (
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          Este vale ya no puede ser modificado. Solo puedes ver las líneas de detalle.
-        </p>
-      </div>
-    );
-  }
-
   // OPCIÓN A: Deshabilitar edición si el vale ya tiene líneas existentes
   // Para evitar conflictos con line_number en el backend
   const hasExistingLines = backendDetails && backendDetails.length > 0;
 
   return (
     <div className="space-y-4">
-      {hasExistingLines && (
+      {/* Mensaje informativo cuando no se puede editar */}
+      {!canEdit && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            Este vale ya no puede ser modificado (estado: {!canEdit ? 'aprobado o en proceso' : 'pendiente'}).
+          </p>
+        </div>
+      )}
+
+      {/* Advertencia cuando el vale tiene líneas pero está en estado PENDING */}
+      {canEdit && hasExistingLines && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
           <p className="text-sm text-amber-800 font-medium mb-2">
             No es posible agregar o modificar líneas en vales que ya tienen detalles
@@ -186,10 +186,11 @@ export default function VoucherDetailsManager({ voucherId, canEdit }: VoucherDet
         </div>
       )}
 
+      {/* Editor de detalles - SIEMPRE visible, pero en modo readOnly si no se puede editar */}
       <VoucherDetailsEditor
         details={draftDetails}
         onChange={handleDetailsChange}
-        readOnly={hasExistingLines}
+        readOnly={!canEdit || hasExistingLines}
       />
     </div>
   );

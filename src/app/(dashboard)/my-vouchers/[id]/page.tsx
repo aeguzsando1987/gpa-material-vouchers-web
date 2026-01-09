@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { getVoucherTypeName, getVoucherStatusName } from '@/lib/types/voucher';
 import VoucherDetailsManager from '@/components/vouchers/VoucherDetailsManager';
 import VoucherActions from '@/components/vouchers/VoucherActions';
+import VoucherLogsTable from '@/components/vouchers/VoucherLogsTable';
 
 export default function VoucherDetailPage() {
   const params = useParams();
@@ -118,6 +119,9 @@ export default function VoucherDetailPage() {
 
       {/* Líneas de Detalle */}
       <VoucherDetailsManager voucherId={voucherId} canEdit={canEditDetails} />
+
+      {/* Historial de Transacciones (Logs) - Solo Admin/Manager/Supervisor */}
+      <VoucherLogsTable voucherId={voucherId} />
     </div>
   );
 }

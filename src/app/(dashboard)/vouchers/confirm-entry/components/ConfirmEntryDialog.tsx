@@ -136,7 +136,10 @@ export default function ConfirmEntryDialog({
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white dark:bg-gray-800 max-w-5xl max-h-[90vh] overflow-y-auto">
+      <DialogContent
+        className="shadow-2xl max-w-5xl max-h-[90vh] overflow-y-auto border-gray-200 dark:border-gray-700"
+        style={{ backgroundColor: '#f9fafb' }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
             <CheckCircle2 className="h-6 w-6 text-green-600" />

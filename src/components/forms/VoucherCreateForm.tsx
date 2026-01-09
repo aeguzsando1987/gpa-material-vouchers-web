@@ -15,7 +15,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -47,17 +46,18 @@ const voucherCreateSchema = z.object({
   message: 'Fecha de retorno estimada requerida para salida con retorno',
   path: ['estimated_return_date'],
 }).refine((data) => {
-  // Si estimated_return_date existe, debe ser igual o posterior a hoy
+  // Si estimated_return_date existe, debe ser futura
   if (data.estimated_return_date) {
-    const now = new Date();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const returnDate = new Date(data.estimated_return_date);
-    if (returnDate < now) {
+    if (returnDate <= today) {
       return false;
     }
   }
   return true;
 }, {
-  message: 'La fecha y hora de retorno no puede ser en el pasado',
+  message: 'La fecha de retorno debe ser futura',
   path: ['estimated_return_date'],
 });
 
@@ -112,14 +112,6 @@ export default function VoucherCreateForm() {
         voucher_type: data.form_voucher_type === 'ENTRY' ? 'ENTRY' : 'EXIT',
         with_return: data.form_voucher_type === 'EXIT_WITH_RETURN',
       } as any;
-
-      // Convertir datetime-local a ISO 8601 para el backend
-      if (apiData.estimated_return_date) {
-        // datetime-local da formato "2025-12-18T14:30"
-        // Backend necesita ISO: "2025-12-18T14:30:00.000Z" o "2025-12-18T14:30:00"
-        const dateObj = new Date(apiData.estimated_return_date);
-        apiData.estimated_return_date = dateObj.toISOString();
-      }
 
       // Remover el campo temporal
       delete apiData.form_voucher_type;
@@ -354,14 +346,11 @@ export default function VoucherCreateForm() {
             {selectedFormType === 'EXIT_WITH_RETURN' && (
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="estimated_return_date">
-                  Fecha y Hora de Retorno Estimada *
-                  <span className="text-sm text-muted-foreground ml-2">
-                    (puede ser el mismo día)
-                  </span>
+                  Fecha de Retorno Estimada *
                 </Label>
                 <Input
                   id="estimated_return_date"
-                  type="datetime-local"
+                  type="date"
                   {...register('estimated_return_date')}
                 />
                 {errors.estimated_return_date && (

@@ -7,7 +7,6 @@ import {
   Users,
   CheckSquare,
   ClipboardCheck,
-  History,
   FolderPlus,
   FileStack,
   Building2,
@@ -65,12 +64,6 @@ const menuItems: MenuItem[] = [
     href: '/vouchers/confirm-entry',
     icon: PackageCheck,
     roles: [1, 2, 3, 6], // Admin, Manager, Supervisor, Checker
-  },
-  {
-    label: 'Historial de Vales',
-    href: '/vouchers/history',
-    icon: History,
-    roles: [1, 2, 3],
   },
 
   // Misceláneos
