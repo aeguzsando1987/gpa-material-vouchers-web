@@ -76,3 +76,21 @@ export interface ProductUpdatePayload {
   is_serialized?: boolean;
   is_active?: boolean;
 }
+
+// Mapeos en español para categorías
+export const PRODUCT_CATEGORY_NAMES: Record<ProductCategory, string> = {
+  [ProductCategory.TOOL]: 'Herramientas',
+  [ProductCategory.MACHINE]: 'Máquinas/Equipos',
+  [ProductCategory.COMPUTER_EQUIPMENT]: 'Equipo de Cómputo',
+  [ProductCategory.FINISHED_PRODUCT]: 'Producto Terminado',
+  [ProductCategory.RAW_MATERIAL]: 'Materia Prima',
+  [ProductCategory.SPARE_PART]: 'Repuesto/Componente',
+  [ProductCategory.CONSUMABLE]: 'Consumible',
+  [ProductCategory.OTHER]: 'Otro',
+};
+
+// Helper para obtener nombre en español
+export const getProductCategoryName = (category: ProductCategory | null): string => {
+  if (!category) return 'Sin categoría';
+  return PRODUCT_CATEGORY_NAMES[category] || category;
+};

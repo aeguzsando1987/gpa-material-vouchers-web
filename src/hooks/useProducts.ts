@@ -4,7 +4,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient, UseQueryResult } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 import productService from '@/lib/api/services/productService';
 import { Product, ProductSearchResult, ProductListResponse, ProductCreatePayload, ProductUpdatePayload } from '@/lib/types/product';
 
@@ -103,17 +103,12 @@ export const useCreateProduct = () => {
     onSuccess: (newProduct) => {
       // Invalidar queries relevantes
       queryClient.invalidateQueries({ queryKey: ['products'] });
-
-      toast.success('Producto creado exitosamente', {
-        description: `${newProduct.name} ha sido agregado al catálogo`,
-      });
+      toast.success(`Producto creado: ${newProduct.name}`);
     },
 
     onError: (error: any) => {
       const errorMessage = error.response?.data?.detail || 'Error al crear el producto';
-      toast.error('Error al crear producto', {
-        description: errorMessage,
-      });
+      toast.error(typeof errorMessage === 'string' ? errorMessage : 'Error al crear producto');
       console.error('Error creating product:', error);
     },
   });
@@ -132,17 +127,22 @@ export const useUpdateProduct = () => {
       // Invalidar queries relevantes
       queryClient.invalidateQueries({ queryKey: ['products'] });
       queryClient.invalidateQueries({ queryKey: ['products', updatedProduct.id] });
-
-      toast.success('Producto actualizado exitosamente', {
-        description: `${updatedProduct.name} ha sido modificado`,
-      });
+      toast.success(`Producto actualizado: ${updatedProduct.name}`);
     },
 
     onError: (error: any) => {
-      const errorMessage = error.response?.data?.detail || 'Error al actualizar el producto';
-      toast.error('Error al actualizar producto', {
-        description: errorMessage,
-      });
+      // Manejar errores de validación Pydantic (422)
+      if (error.response?.status === 422 && Array.isArray(error.response?.data?.detail)) {
+        const validationErrors = error.response.data.detail;
+        const errorMessages = validationErrors.map((err: any) => {
+          const field = err.loc?.[err.loc.length - 1] || 'campo';
+          return `${field}: ${err.msg}`;
+        });
+        toast.error(`Errores de validación:\n${errorMessages.join('\n')}`);
+      } else {
+        const errorMessage = error.response?.data?.detail || 'Error al actualizar el producto';
+        toast.error(typeof errorMessage === 'string' ? errorMessage : 'Error al actualizar producto');
+      }
       console.error('Error updating product:', error);
     },
   });
@@ -160,22 +160,14 @@ export const useDeleteProduct = () => {
     onSuccess: (_, variables) => {
       // Invalidar queries relevantes
       queryClient.invalidateQueries({ queryKey: ['products'] });
-
       toast.success(
-        variables.hardDelete ? 'Producto eliminado permanentemente' : 'Producto desactivado',
-        {
-          description: variables.hardDelete
-            ? 'El producto ha sido eliminado de la base de datos'
-            : 'El producto ha sido marcado como inactivo',
-        }
+        variables.hardDelete ? 'Producto eliminado permanentemente' : 'Producto eliminado exitosamente'
       );
     },
 
     onError: (error: any) => {
       const errorMessage = error.response?.data?.detail || 'Error al eliminar el producto';
-      toast.error('Error al eliminar producto', {
-        description: errorMessage,
-      });
+      toast.error(typeof errorMessage === 'string' ? errorMessage : 'Error al eliminar producto');
       console.error('Error deleting product:', error);
     },
   });

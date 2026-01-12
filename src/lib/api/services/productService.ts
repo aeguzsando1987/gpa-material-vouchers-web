@@ -4,7 +4,7 @@
  */
 
 import apiClient from '../client';
-import { Product, ProductSearchResult, ProductListResponse, ProductCreatePayload, ProductUpdatePayload } from '@/lib/types/product';
+import { Product, ProductSearchResult, ProductListResponse, ProductCreatePayload, ProductUpdatePayload, ProductCategory } from '@/lib/types/product';
 
 /**
  * Busca productos por término (autocomplete)
@@ -105,6 +105,30 @@ export const getById = async (id: number): Promise<Product> => {
 };
 
 /**
+ * Obtiene productos filtrados por categoría
+ * @param category - Categoría del producto
+ * @param skip - Registros a saltar (default: 0)
+ * @param limit - Máximo de registros (default: 100)
+ * @param activeOnly - Solo productos activos (default: true)
+ * @returns Array de productos de la categoría
+ */
+export const getByCategory = async (
+  category: ProductCategory,
+  skip: number = 0,
+  limit: number = 100,
+  activeOnly: boolean = true
+): Promise<Product[]> => {
+  const response = await apiClient.get<Product[]>(`/products/category/${category}`, {
+    params: {
+      skip,
+      limit,
+      active_only: activeOnly,
+    },
+  });
+  return response.data;
+};
+
+/**
  * Crea un nuevo producto
  * @param data - Datos del producto a crear
  * @returns Producto creado
@@ -146,6 +170,7 @@ export const productService = {
   getAll,
   getPaginated,
   getById,
+  getByCategory,
   create,
   update,
   delete: deleteProduct,
