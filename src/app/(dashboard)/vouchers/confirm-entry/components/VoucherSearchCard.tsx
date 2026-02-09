@@ -16,9 +16,10 @@ import {
   FileText,
 } from 'lucide-react';
 import { voucherService } from '@/lib/api/services/voucherService';
-import { Voucher } from '@/lib/types/voucher';
+import { VoucherWithDetails } from '@/lib/types/voucher';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { parseLocalDate } from '@/lib/utils/dateHelpers';
 
 type VoucherCategory = 'return' | 'intercompany' | 'entry' | 'overdue';
 
@@ -56,7 +57,7 @@ const tabs = [
 export default function VoucherSearchCard({ onSelectVoucher }: VoucherSearchCardProps) {
   const [activeTab, setActiveTab] = useState<VoucherCategory>('return');
   const [searchValue, setSearchValue] = useState('');
-  const [vouchersList, setVouchersList] = useState<Voucher[]>([]);
+  const [vouchersList, setVouchersList] = useState<VoucherWithDetails[]>([]);
   const [isLoadingList, setIsLoadingList] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [categoryCounts, setCategoryCounts] = useState<Record<VoucherCategory, number>>({
@@ -276,7 +277,7 @@ export default function VoucherSearchCard({ onSelectVoucher }: VoucherSearchCard
                             </p>
                             {voucher.estimated_return_date && (
                               <p className="text-xs text-muted-foreground">
-                                Retorno estimado: {format(new Date(voucher.estimated_return_date), 'dd/MM/yyyy')}
+                                Retorno estimado: {format(parseLocalDate(voucher.estimated_return_date), 'dd/MM/yyyy')}
                               </p>
                             )}
                           </div>

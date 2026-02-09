@@ -26,7 +26,7 @@ import {
   getBadgeColorClasses,
 } from '@/lib/utils/logHelpers';
 import { getLogTypeName, LogTableRow } from '@/lib/types/voucher';
-import { formatLogDate } from '@/lib/utils/dateHelpers';
+import { formatDateTime } from '@/lib/utils/dateHelpers';
 
 interface VoucherLogsTableProps {
   voucherId: number;
@@ -206,7 +206,7 @@ export default function VoucherLogsTable({ voucherId }: VoucherLogsTableProps) {
 
                   {/* Fecha formateada */}
                   <TableCell className="text-gray-600 dark:text-gray-400 whitespace-nowrap">
-                    {formatLogDate(row.created_at)}
+                    {formatDateTime(row.created_at)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -235,7 +235,7 @@ export default function VoucherLogsTable({ voucherId }: VoucherLogsTableProps) {
             <DialogDescription>
               {selectedLog && (
                 <span className="text-sm" style={{ color: '#374151' }}>
-                  {getLogTypeName(selectedLog.log_type)} - {formatLogDate(selectedLog.created_at)}
+                  {getLogTypeName(selectedLog.log_type)} - {formatDateTime(selectedLog.created_at)}
                 </span>
               )}
             </DialogDescription>

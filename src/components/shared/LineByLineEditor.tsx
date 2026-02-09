@@ -87,7 +87,7 @@ export default function LineByLineEditor({
         ...prev[detailId],
         detail_id: detailId,
         ok: prev[detailId]?.ok ?? false,
-        notes: notes.trim() || undefined,
+        notes: notes || undefined,
       },
     }));
   };

@@ -49,3 +49,24 @@ export interface IndividualWithUserResponse {
     user_id: number;
   };
 }
+
+// Para crear un Individual independiente (sin crear usuario)
+export interface IndividualCreateInput {
+  name: string;
+  last_name: string;
+  email: string;
+  phone?: string;
+  address?: string;
+  status?: string;
+  user_id?: number; // Para asociar a un usuario existente
+}
+
+// Para actualizar un Individual existente
+export interface IndividualUpdateInput {
+  name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  status?: string;
+}

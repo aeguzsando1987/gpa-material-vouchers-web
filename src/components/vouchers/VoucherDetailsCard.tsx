@@ -13,11 +13,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Building2, MapPin, User, Calendar, FileText, Package, AlertTriangle, Clock } from 'lucide-react';
-import { Voucher } from '@/lib/types/voucher';
-import { format, isPast, differenceInDays } from 'date-fns';
+import { VoucherWithDetails } from '@/lib/types/voucher';
+import { format, isBefore, startOfDay, differenceInDays } from 'date-fns';
+import { parseLocalDate } from '@/lib/utils/dateHelpers';
 
 interface VoucherDetailsCardProps {
-  voucher: Voucher;
+  voucher: VoucherWithDetails;
 }
 
 export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps) {
@@ -37,10 +38,16 @@ export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps)
     return <Badge variant="outline">Sin Retorno</Badge>;
   };
 
-  // Verificar si está vencido
-  const isOverdue = voucher.estimated_return_date && isPast(new Date(voucher.estimated_return_date));
+  // Verificar si está vencido (solo si la fecha estimada es ANTES de hoy, no incluye hoy)
+  const isOverdue = voucher.estimated_return_date && (() => {
+    const today = startOfDay(new Date());
+    const returnDate = parseLocalDate(voucher.estimated_return_date);
+    // Vencido solo si returnDate < today (no incluye el mismo día)
+    return isBefore(returnDate, today);
+  })();
+
   const daysOverdue = isOverdue
-    ? Math.abs(differenceInDays(new Date(), new Date(voucher.estimated_return_date!)))
+    ? Math.abs(differenceInDays(new Date(), parseLocalDate(voucher.estimated_return_date!)))
     : 0;
 
   return (
@@ -82,7 +89,7 @@ export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps)
                 Este vale excedió su fecha de retorno estimada por{' '}
                 <span className="font-semibold">{daysOverdue} día{daysOverdue !== 1 ? 's' : ''}</span>.
                 Fecha esperada:{' '}
-                {format(new Date(voucher.estimated_return_date!), 'dd/MM/yyyy')}
+                {format(parseLocalDate(voucher.estimated_return_date!), 'dd/MM/yyyy')}
               </p>
             </AlertDescription>
           </Alert>
@@ -92,8 +99,8 @@ export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps)
         {!isOverdue &&
           voucher.estimated_return_date &&
           voucher.status === 'IN_TRANSIT' &&
-          differenceInDays(new Date(voucher.estimated_return_date), new Date()) <= 3 &&
-          differenceInDays(new Date(voucher.estimated_return_date), new Date()) >= 0 && (
+          differenceInDays(parseLocalDate(voucher.estimated_return_date), new Date()) <= 3 &&
+          differenceInDays(parseLocalDate(voucher.estimated_return_date), new Date()) >= 0 && (
             <Alert variant="default" className="border-amber-200 bg-amber-50 dark:bg-amber-950/20">
               <Clock className="h-4 w-4 text-amber-600" />
               <AlertTitle className="text-amber-700 font-semibold">
@@ -103,13 +110,13 @@ export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps)
                 <p className="text-sm">
                   Fecha de retorno estimada:{' '}
                   <span className="font-semibold">
-                    {format(new Date(voucher.estimated_return_date), 'dd/MM/yyyy')}
+                    {format(parseLocalDate(voucher.estimated_return_date), 'dd/MM/yyyy')}
                   </span>{' '}
-                  ({differenceInDays(new Date(voucher.estimated_return_date), new Date())} día
-                  {differenceInDays(new Date(voucher.estimated_return_date), new Date()) !== 1
+                  ({differenceInDays(parseLocalDate(voucher.estimated_return_date), new Date())} día
+                  {differenceInDays(parseLocalDate(voucher.estimated_return_date), new Date()) !== 1
                     ? 's'
                     : ''}{' '}
-                  restante{differenceInDays(new Date(voucher.estimated_return_date), new Date()) !== 1 ? 's' : ''})
+                  restante{differenceInDays(parseLocalDate(voucher.estimated_return_date), new Date()) !== 1 ? 's' : ''})
                 </p>
               </AlertDescription>
             </Alert>
@@ -143,7 +150,7 @@ export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps)
                 Fecha Estimada de Retorno
               </Label>
               <p className="font-medium">
-                {format(new Date(voucher.estimated_return_date), 'dd/MM/yyyy')}
+                {format(parseLocalDate(voucher.estimated_return_date), 'dd/MM/yyyy')}
               </p>
             </div>
           )}

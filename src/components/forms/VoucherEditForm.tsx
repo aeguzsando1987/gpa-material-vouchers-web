@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { useUpdateVoucher } from '@/hooks/useVouchers';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useBranches } from '@/hooks/useBranches';
+import { parseLocalDate } from '@/lib/utils/dateHelpers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,18 +44,18 @@ const voucherEditSchema = z.object({
   message: 'Fecha de retorno estimada requerida para salida con retorno',
   path: ['estimated_return_date'],
 }).refine((data) => {
-  // Si estimated_return_date existe, debe ser fecha futura
+  // Si estimated_return_date existe, debe ser fecha futura o igual
   if (data.estimated_return_date) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const returnDate = new Date(data.estimated_return_date);
-    if (returnDate <= today) {
+    const returnDate = parseLocalDate(data.estimated_return_date);
+    if (returnDate < today) {
       return false;
     }
   }
   return true;
 }, {
-  message: 'La fecha de retorno debe ser futura',
+  message: 'La fecha de retorno no puede ser anterior a hoy',
   path: ['estimated_return_date'],
 });
 
@@ -107,6 +108,13 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
 
   const onSubmit = async (data: VoucherEditFormData) => {
     try {
+      // FIX: Asegurar que estimated_return_date se envíe como YYYY-MM-DD sin zona horaria
+      let normalizedReturnDate = data.estimated_return_date || undefined;
+      if (normalizedReturnDate && normalizedReturnDate.includes('T')) {
+        // Tiene componente de tiempo, extraer solo la fecha
+        normalizedReturnDate = normalizedReturnDate.split('T')[0];
+      }
+
       // Convertir form_voucher_type a voucher_type + with_return
       const updateData = {
         voucher_type: data.form_voucher_type === 'ENTRY' ? 'ENTRY' : 'EXIT',
@@ -116,7 +124,7 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
         destination_branch_id: data.destination_branch_id || undefined,
         outer_destination: data.outer_destination || undefined,
         is_intercompany: data.is_intercompany,
-        estimated_return_date: data.estimated_return_date || undefined,
+        estimated_return_date: normalizedReturnDate,
         notes: data.notes || undefined,
         internal_notes: data.internal_notes || undefined,
       };
@@ -302,6 +310,7 @@ export default function VoucherEditForm({ voucher }: VoucherEditFormProps) {
                 <Input
                   id="estimated_return_date"
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   {...register('estimated_return_date')}
                 />
                 {errors.estimated_return_date && (

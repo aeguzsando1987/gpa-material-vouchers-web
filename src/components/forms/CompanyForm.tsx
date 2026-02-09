@@ -28,7 +28,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface CompanyFormProps {
   company?: Company; // Si existe, modo edición; si no, modo creación
-  onSubmit: (data: CompanyCreateInput | CompanyUpdateInput) => void;
+  onSubmit: (data: CompanyCreateInput | CompanyUpdateInput) => void | Promise<void>;
   isLoading?: boolean;
 }
 

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCreateBranch } from '@/hooks/useBranches';
-import { BranchCreateInput } from '@/lib/types/branch';
+import { BranchCreateInput, BranchUpdateInput } from '@/lib/types/branch';
 import BranchForm from '@/components/forms/BranchForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,8 @@ export default function CreateBranchPage() {
   const router = useRouter();
   const createBranchMutation = useCreateBranch();
 
-  const handleSubmit = async (data: BranchCreateInput) => {
-    await createBranchMutation.mutateAsync(data);
+  const handleSubmit = async (data: BranchCreateInput | BranchUpdateInput) => {
+    await createBranchMutation.mutateAsync(data as BranchCreateInput);
     router.push('/misc/branches');
   };
 

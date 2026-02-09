@@ -122,25 +122,14 @@ export default function ValidateExitPage() {
       </div>
 
       {/* Debug Card - TEMPORAL */}
-      <Card className="border-yellow-500 bg-yellow-50">
-        <CardHeader>
-          <CardTitle className="text-sm text-yellow-800">
-            🔍 Debug - Información del Usuario (TEMPORAL)
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2">
-          <div className="font-mono text-xs">
-            <div><strong>Email:</strong> {user?.email || 'No cargado'}</div>
-            <div><strong>Nombre:</strong> {user?.name || 'No cargado'}</div>
-            <div><strong>Role:</strong> {user?.role || 'No cargado'}</div>
-            <div><strong>Individual ID:</strong> {user?.individual_id ? user.individual_id : <span className="text-red-600 font-bold">❌ NULL/UNDEFINED</span>}</div>
-            <div className="mt-2"><strong>Usuario completo:</strong></div>
-            <pre className="bg-white p-2 rounded border text-xs overflow-auto max-h-32">
-              {JSON.stringify(user, null, 2)}
-            </pre>
-          </div>
-
-          {!currentUserIndividualId && (
+      {!currentUserIndividualId && (
+        <Card className="border-yellow-500 bg-yellow-50">
+          <CardHeader>
+            <CardTitle className="text-sm text-yellow-800">
+              🔍 Debug - Información del Usuario (TEMPORAL)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
             <Alert className="bg-red-50 border-red-300">
               <AlertDescription className="text-red-800 text-sm">
                 <strong>⚠️ PROBLEMA DETECTADO:</strong> El usuario NO tiene <code>individual_id</code> asignado.
@@ -151,44 +140,69 @@ export default function ValidateExitPage() {
                 </ol>
               </AlertDescription>
             </Alert>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Búsqueda de voucher */}
-      <VoucherSearchCard
-        onSelectVoucher={handleSelectVoucher}
-        isLoading={isLoadingVoucher}
-        refreshTrigger={refreshTrigger}
-      />
-
-      {/* Loading state */}
-      {isLoadingVoucher && (
-        <div className="flex justify-center items-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          <span className="ml-2 text-muted-foreground">Cargando vale...</span>
+      {/* Layout de dos columnas */}
+      <div className="grid grid-cols-12 gap-6">
+        {/* Columna izquierda - Lista de vales */}
+        <div className="col-span-4">
+          <VoucherSearchCard
+            onSelectVoucher={handleSelectVoucher}
+            isLoading={isLoadingVoucher}
+            refreshTrigger={refreshTrigger}
+          />
         </div>
-      )}
 
-      {/* Detalles del vale seleccionado */}
-      {selectedVoucher && !isLoadingVoucher && (
-        <>
-          <VoucherDetailsCard voucher={selectedVoucher} />
+        {/* Columna derecha - Detalle del vale */}
+        <div className="col-span-8">
+          {/* Loading state */}
+          {isLoadingVoucher && (
+            <Card>
+              <CardContent className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                <span className="ml-2 text-muted-foreground">Cargando vale...</span>
+              </CardContent>
+            </Card>
+          )}
 
-          {/* Botón para abrir dialog de validación */}
-          <div className="flex justify-end">
-            <Button
-              size="lg"
-              onClick={() => setShowValidateDialog(true)}
-              disabled={!currentUserIndividualId}
-              className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
-            >
-              <CheckCircle className="mr-2 h-5 w-5" />
-              Validar Salida
-            </Button>
-          </div>
-        </>
-      )}
+          {/* Mensaje cuando no hay vale seleccionado */}
+          {!selectedVoucher && !isLoadingVoucher && (
+            <Card>
+              <CardContent className="flex flex-col justify-center items-center py-16 text-center">
+                <CheckCircle className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold text-muted-foreground">
+                  Selecciona un vale para validar
+                </h3>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Elige un vale de la lista de la izquierda para comenzar la validación de salida
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Detalles del vale seleccionado */}
+          {selectedVoucher && !isLoadingVoucher && (
+            <div className="space-y-4">
+              <VoucherDetailsCard voucher={selectedVoucher} />
+
+              {/* Botón para abrir dialog de validación */}
+              <div className="flex justify-end">
+                <Button
+                  size="lg"
+                  onClick={() => setShowValidateDialog(true)}
+                  disabled={!currentUserIndividualId}
+                  className="bg-green-600 hover:bg-green-700 text-white cursor-pointer"
+                >
+                  <CheckCircle className="mr-2 h-5 w-5" />
+                  Validar Salida
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Dialog de validación */}
       {selectedVoucher && (

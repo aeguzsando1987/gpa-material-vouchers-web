@@ -79,8 +79,20 @@ export function useCreateVoucher() {
       toast.success('Vale creado exitosamente');
     },
     onError: (error: any) => {
-      const message =
-        error.response?.data?.detail || 'Error al crear vale';
+      let message = 'Error al crear vale';
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        // Si es array (errores de validación Pydantic)
+        if (Array.isArray(detail)) {
+          message = detail.map((e: any) => e.msg || e.message || JSON.stringify(e)).join(', ');
+        } else if (typeof detail === 'string') {
+          message = detail;
+        } else {
+          message = JSON.stringify(detail);
+        }
+      }
+
       toast.error(message);
     },
   });

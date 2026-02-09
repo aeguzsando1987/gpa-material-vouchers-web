@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { getVoucherTypeName, getVoucherStatusName } from '@/lib/types/voucher';
+import { formatDateWithoutTimezone, formatDateTime } from '@/lib/utils/dateHelpers';
 import VoucherDetailsManager from '@/components/vouchers/VoucherDetailsManager';
 import VoucherActions from '@/components/vouchers/VoucherActions';
 import VoucherLogsTable from '@/components/vouchers/VoucherLogsTable';
@@ -79,6 +80,7 @@ export default function VoucherDetailPage() {
         </CardHeader>
         <CardContent>
           <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Información básica */}
             <div>
               <dt className="text-sm font-medium text-muted-foreground">Tipo</dt>
               <dd className="text-sm">{getVoucherTypeName(voucher.voucher_type)}</dd>
@@ -87,18 +89,86 @@ export default function VoucherDetailPage() {
               <dt className="text-sm font-medium text-muted-foreground">Estado</dt>
               <dd className="text-sm">{getVoucherStatusName(voucher.status)}</dd>
             </div>
-            {voucher.with_return && (
+
+            {/* Empresa */}
+            {voucher.company_name && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Empresa</dt>
+                <dd className="text-sm">{voucher.company_name}</dd>
+              </div>
+            )}
+
+            {/* Fecha de creación */}
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">Fecha de Creación</dt>
+              <dd className="text-sm">
+                {formatDateTime(voucher.created_at, 'es-MX', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </dd>
+            </div>
+
+            {/* Características */}
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">Con Retorno</dt>
+              <dd className="text-sm">{voucher.with_return ? 'Sí' : 'No'}</dd>
+            </div>
+            <div>
+              <dt className="text-sm font-medium text-muted-foreground">Intercompañía</dt>
+              <dd className="text-sm">{voucher.is_intercompany ? 'Sí' : 'No'}</dd>
+            </div>
+
+            {/* Sucursales */}
+            {voucher.origin_branch_name && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Sucursal Origen</dt>
+                <dd className="text-sm">{voucher.origin_branch_name}</dd>
+              </div>
+            )}
+            {voucher.destination_branch_name && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Sucursal Destino</dt>
+                <dd className="text-sm">{voucher.destination_branch_name}</dd>
+              </div>
+            )}
+
+            {/* Responsables */}
+            {voucher.delivered_by_name && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Entregado Por</dt>
+                <dd className="text-sm">{voucher.delivered_by_name}</dd>
+              </div>
+            )}
+            {voucher.approved_by_name && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Aprobado Por</dt>
+                <dd className="text-sm">{voucher.approved_by_name}</dd>
+              </div>
+            )}
+            {voucher.received_by_name && (
+              <div>
+                <dt className="text-sm font-medium text-muted-foreground">Recibido Por</dt>
+                <dd className="text-sm">{voucher.received_by_name}</dd>
+              </div>
+            )}
+
+            {/* Fecha de retorno estimada */}
+            {voucher.with_return && voucher.estimated_return_date && (
               <div>
                 <dt className="text-sm font-medium text-muted-foreground">
                   Fecha de Retorno Estimada
                 </dt>
                 <dd className="text-sm">
-                  {voucher.estimated_return_date
-                    ? new Date(voucher.estimated_return_date).toLocaleDateString()
-                    : 'No especificada'}
+                  {formatDateWithoutTimezone(voucher.estimated_return_date)}
                 </dd>
               </div>
             )}
+
+            {/* Destino externo */}
             {voucher.outer_destination && (
               <div className="md:col-span-2">
                 <dt className="text-sm font-medium text-muted-foreground">
@@ -107,10 +177,18 @@ export default function VoucherDetailPage() {
                 <dd className="text-sm">{voucher.outer_destination}</dd>
               </div>
             )}
+
+            {/* Notas */}
             {voucher.notes && (
               <div className="md:col-span-2">
                 <dt className="text-sm font-medium text-muted-foreground">Notas</dt>
-                <dd className="text-sm">{voucher.notes}</dd>
+                <dd className="text-sm whitespace-pre-wrap">{voucher.notes}</dd>
+              </div>
+            )}
+            {voucher.internal_notes && (
+              <div className="md:col-span-2">
+                <dt className="text-sm font-medium text-muted-foreground">Notas Internas</dt>
+                <dd className="text-sm whitespace-pre-wrap text-orange-600">{voucher.internal_notes}</dd>
               </div>
             )}
           </dl>

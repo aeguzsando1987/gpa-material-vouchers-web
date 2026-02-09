@@ -31,7 +31,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface BranchFormProps {
   branch?: Branch; // Si existe, modo edición; si no, modo creación
-  onSubmit: (data: BranchCreateInput | BranchUpdateInput) => void;
+  onSubmit: (data: BranchCreateInput | BranchUpdateInput) => void | Promise<void>;
   isLoading?: boolean;
 }
 

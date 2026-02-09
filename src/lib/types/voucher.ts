@@ -2,6 +2,9 @@
 
 import { VoucherDetail } from './voucherDetail';
 
+// Re-exportar VoucherDetail para que esté disponible
+export type { VoucherDetail } from './voucherDetail';
+
 // Enums
 export type VoucherType = 'ENTRY' | 'EXIT';
 export type VoucherStatus =
@@ -114,6 +117,8 @@ export interface VoucherFilters {
   page?: number;
   per_page?: number;
   active_only?: boolean;
+  order_by?: string; // Campo para ordenar (folio, created_at, etc.)
+  order_direction?: 'asc' | 'desc'; // Dirección del ordenamiento
 }
 
 // Parámetros de búsqueda avanzada

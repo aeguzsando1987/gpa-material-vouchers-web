@@ -3,6 +3,8 @@ import {
   Individual,
   IndividualWithUserInput,
   IndividualWithUserResponse,
+  IndividualCreateInput,
+  IndividualUpdateInput,
 } from '@/lib/types/individual';
 
 export const individualService = {
@@ -18,6 +20,33 @@ export const individualService = {
     const response = await apiClient.get<Individual[]>('/individuals/', {
       params: { skip, limit, active_only: activeOnly },
     });
+    return response.data;
+  },
+
+  /**
+   * Obtener individual por ID
+   * Endpoint: GET /individuals/{id}
+   */
+  getById: async (id: number): Promise<Individual> => {
+    const response = await apiClient.get<Individual>(`/individuals/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Crear un nuevo individual
+   * Endpoint: POST /individuals/
+   */
+  create: async (data: IndividualCreateInput): Promise<Individual> => {
+    const response = await apiClient.post<Individual>('/individuals/', data);
+    return response.data;
+  },
+
+  /**
+   * Actualizar individual existente
+   * Endpoint: PUT /individuals/{id}
+   */
+  update: async (id: number, data: IndividualUpdateInput): Promise<Individual> => {
+    const response = await apiClient.put<Individual>(`/individuals/${id}`, data);
     return response.data;
   },
 

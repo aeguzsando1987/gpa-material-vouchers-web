@@ -34,9 +34,9 @@ export interface AuthState {
 export const ROLE_NAMES: Record<number, string> = {
   1: 'Admin',
   2: 'Gerente',
-  3: 'Colaborador',
+  3: 'Supervisor',
   4: 'Lector',
-  5: 'Guest',
+  5: 'Invitado',
   6: 'Vigilante',
 };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { Loader2 } from 'lucide-react';
 import { useCreateVoucher } from '@/hooks/useVouchers';
 import { useCompanies } from '@/hooks/useCompanies';
 import { useBranches } from '@/hooks/useBranches';
+import { useAuthStore } from '@/lib/store/authStore';
 import { voucherDetailService } from '@/lib/api/services/voucherDetailService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ import {
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import VoucherDetailsEditor, { VoucherDetailDraft } from '@/components/vouchers/VoucherDetailsEditor';
+import { VoucherSuccessModal } from '@/components/vouchers/VoucherSuccessModal';
 
 const voucherCreateSchema = z.object({
   form_voucher_type: z.enum(['ENTRY', 'EXIT_WITH_RETURN', 'EXIT_WITHOUT_RETURN'] as const),
@@ -46,18 +48,18 @@ const voucherCreateSchema = z.object({
   message: 'Fecha de retorno estimada requerida para salida con retorno',
   path: ['estimated_return_date'],
 }).refine((data) => {
-  // Si estimated_return_date existe, debe ser futura
+  // Si estimated_return_date existe, no puede ser anterior a hoy
   if (data.estimated_return_date) {
+    // Comparar strings de fecha en formato YYYY-MM-DD para evitar problemas de timezone
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const returnDate = new Date(data.estimated_return_date);
-    if (returnDate <= today) {
+    const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    if (data.estimated_return_date < todayString) {
       return false;
     }
   }
   return true;
 }, {
-  message: 'La fecha de retorno debe ser futura',
+  message: 'La fecha de retorno no puede ser anterior a hoy',
   path: ['estimated_return_date'],
 });
 
@@ -65,9 +67,15 @@ type VoucherCreateFormData = z.infer<typeof voucherCreateSchema>;
 
 export default function VoucherCreateForm() {
   const router = useRouter();
+  const { user } = useAuthStore();
   const createVoucher = useCreateVoucher();
   const [details, setDetails] = useState<VoucherDetailDraft[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    voucherId: 0,
+    voucherFolio: '',
+  });
 
   const { data: companiesResponse, isLoading: loadingCompanies } = useCompanies(1, 100, true);
 
@@ -85,7 +93,7 @@ export default function VoucherCreateForm() {
     defaultValues: {
       form_voucher_type: 'EXIT_WITHOUT_RETURN',
       is_intercompany: false,
-      delivered_by_id: 1, // Se actualizará cuando esté disponible individual_id
+      delivered_by_id: user?.individual_id || 1, // ID del individual del usuario actual
     },
   });
 
@@ -96,6 +104,13 @@ export default function VoucherCreateForm() {
   // Obtener TODAS las sucursales (sin filtrar por empresa)
   const { data: branchesResponse } = useBranches(1, 100, true);
   const branches = branchesResponse?.data;
+
+  // Actualizar delivered_by_id cuando el usuario se carga
+  useEffect(() => {
+    if (user?.individual_id) {
+      setValue('delivered_by_id', user.individual_id);
+    }
+  }, [user?.individual_id, setValue]);
 
   // Memoizar handler de details para prevenir re-renders innecesarios (Bug 4)
   const handleDetailsChange = useCallback((newDetails: VoucherDetailDraft[]) => {
@@ -116,57 +131,61 @@ export default function VoucherCreateForm() {
       // Remover el campo temporal
       delete apiData.form_voucher_type;
 
+      // FIX: Asegurar que estimated_return_date se envíe como YYYY-MM-DD sin zona horaria
+      // Esto previene que el backend convierta la fecha a UTC y reste un día
+      if (apiData.estimated_return_date) {
+        // Si ya está en formato YYYY-MM-DD, mantenerlo; si no, extraer solo la fecha
+        const dateStr = apiData.estimated_return_date;
+        if (dateStr.includes('T')) {
+          // Tiene componente de tiempo, extraer solo la fecha
+          apiData.estimated_return_date = dateStr.split('T')[0];
+        }
+        // Ya está en formato YYYY-MM-DD, no hacer nada más
+      }
+
       // 1. Crear el voucher
       const createdVoucher = await createVoucher.mutateAsync(apiData);
 
       // 2. Crear las líneas de detalle si hay alguna
       if (details.length > 0) {
-        console.log(`📊 DEBUG: Starting detail creation. Total details in state: ${details.length}`);
-        console.log('📊 DEBUG: Full details array:', JSON.stringify(details, null, 2));
-
         for (let i = 0; i < details.length; i++) {
           const detail = details[i];
           try {
-            console.log(`Creating detail line ${i + 1}/${details.length}:`, {
-              line_number: detail.line_number,
-              item_name: detail.item_name,
-            });
-
-            const response = await voucherDetailService.create({
+            await voucherDetailService.create({
               voucher_id: createdVoucher.id,
               line_number: detail.line_number,
-              product_id: detail.product_id, // ✅ CLAVE: Pasar product_id al backend para evitar búsqueda de similitud
+              product_id: detail.product_id,
               item_name: detail.item_name,
               item_description: detail.item_description,
               quantity: detail.quantity,
               unit_of_measure: detail.unit_of_measure,
               serial_number: detail.serial_number,
               part_number: detail.part_number,
-              category: detail.category, // ✅ Pasar categoría para manual entry
+              category: detail.category,
               notes: detail.notes,
             });
 
-            console.log(`✓ Detail line ${i + 1} created successfully`);
-            console.log('🔍 DEBUG: Full backend response:', JSON.stringify(response, null, 2));
-            console.log('🔍 DEBUG: Response ID:', response?.id);
-            console.log('🔍 DEBUG: Response keys:', Object.keys(response || {}));
-
-            // Pequeño delay para evitar problemas de CORS/timing
+            // Pequeño delay para evitar problemas de timing
             if (i < details.length - 1) {
               await new Promise(resolve => setTimeout(resolve, 100));
             }
           } catch (error) {
-            console.error(`✗ Error creating detail line ${i + 1}:`, error);
             // Continuar con las siguientes líneas incluso si una falla
           }
         }
       }
 
-      // 3. Navegar al detalle del voucher creado
-      router.push(`/my-vouchers/${createdVoucher.id}`);
+      // 3. Mostrar modal de éxito
+      setSuccessModal({
+        isOpen: true,
+        voucherId: createdVoucher.id,
+        voucherFolio: createdVoucher.folio,
+      });
+
+      // Limpiar detalles después de crear
+      setDetails([]);
     } catch (error) {
       // Error handled by hook
-      console.error('Error creating voucher:', error);
     } finally {
       setIsCreating(false);
     }
@@ -351,6 +370,7 @@ export default function VoucherCreateForm() {
                 <Input
                   id="estimated_return_date"
                   type="date"
+                  min={new Date().toISOString().split('T')[0]}
                   {...register('estimated_return_date')}
                 />
                 {errors.estimated_return_date && (
@@ -437,6 +457,14 @@ export default function VoucherCreateForm() {
           )}
         </Button>
       </div>
+
+      {/* Modal de éxito */}
+      <VoucherSuccessModal
+        isOpen={successModal.isOpen}
+        onClose={() => setSuccessModal({ ...successModal, isOpen: false })}
+        voucherId={successModal.voucherId}
+        voucherFolio={successModal.voucherFolio}
+      />
     </form>
   );
 }

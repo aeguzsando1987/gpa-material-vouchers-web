@@ -12,11 +12,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Building2, MapPin, User, Calendar, FileText, Package } from 'lucide-react';
-import { Voucher } from '@/lib/types/voucher';
+import { VoucherWithDetails } from '@/lib/types/voucher';
 import { format } from 'date-fns';
+import { parseLocalDate } from '@/lib/utils/dateHelpers';
 
 interface VoucherDetailsCardProps {
-  voucher: Voucher;
+  voucher: VoucherWithDetails;
 }
 
 export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps) {
@@ -91,7 +92,7 @@ export default function VoucherDetailsCard({ voucher }: VoucherDetailsCardProps)
                 Fecha Estimada de Retorno
               </Label>
               <p className="font-medium">
-                {format(new Date(voucher.estimated_return_date), 'dd/MM/yyyy')}
+                {format(parseLocalDate(voucher.estimated_return_date), 'dd/MM/yyyy')}
               </p>
             </div>
           )}

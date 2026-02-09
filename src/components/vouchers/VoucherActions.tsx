@@ -28,6 +28,7 @@ import { useApproveVoucher, useCancelVoucher } from '@/hooks/useVouchers';
 import { useAuthStore } from '@/lib/store/authStore';
 import { canApproveVouchers } from '@/lib/types/auth';
 import { Voucher } from '@/lib/types/voucher';
+import { PrintVoucherButton } from './PrintVoucherButton';
 
 interface VoucherActionsProps {
   voucher: Voucher;
@@ -101,14 +102,19 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
     router.push(`/my-vouchers/${voucher.id}/edit`);
   };
 
-  // Si no hay botones visibles, no renderizar nada
-  if (!showApproveButton && !showCancelButton && !showEditButton) {
-    return null;
-  }
+  // NOTA: Siempre renderizar porque el botón de imprimir debe estar siempre visible
 
   return (
     <>
       <div className="flex flex-wrap gap-3">
+        {/* Botón de Imprimir - SIEMPRE visible */}
+        <PrintVoucherButton
+          voucherId={voucher.id}
+          voucherFolio={voucher.folio}
+          variant="outline"
+          showLabel={true}
+        />
+
         {showApproveButton && (
           <Button
             onClick={handleApproveClick}

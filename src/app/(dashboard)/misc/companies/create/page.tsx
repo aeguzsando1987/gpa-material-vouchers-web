@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useCreateCompany } from '@/hooks/useCompanies';
-import { CompanyCreateInput } from '@/lib/types/company';
+import { CompanyCreateInput, CompanyUpdateInput } from '@/lib/types/company';
 import CompanyForm from '@/components/forms/CompanyForm';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,8 @@ export default function CreateCompanyPage() {
   const router = useRouter();
   const createCompanyMutation = useCreateCompany();
 
-  const handleSubmit = async (data: CompanyCreateInput) => {
-    await createCompanyMutation.mutateAsync(data);
+  const handleSubmit = async (data: CompanyCreateInput | CompanyUpdateInput) => {
+    await createCompanyMutation.mutateAsync(data as CompanyCreateInput);
     router.push('/misc/companies');
   };
 

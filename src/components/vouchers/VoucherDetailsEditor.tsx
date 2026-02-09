@@ -130,10 +130,7 @@ export default function VoucherDetailsEditor({ details, onChange, readOnly = fal
       notes: data.notes || undefined,
     };
 
-    console.log('📝 DEBUG: Adding new detail line:', newDetail);
-    console.log('📝 DEBUG: Current details before add:', details);
     const updatedDetails = [...details, newDetail];
-    console.log('📝 DEBUG: Updated details after add:', updatedDetails);
 
     onChange(updatedDetails);
     // Reset explícito de TODOS los campos para limpiar product_id
@@ -179,10 +176,7 @@ export default function VoucherDetailsEditor({ details, onChange, readOnly = fal
 
   // Eliminar línea
   const handleDeleteDetail = (lineNumber: number) => {
-    console.log('🗑️ DEBUG: Deleting line number:', lineNumber);
-    console.log('🗑️ DEBUG: Details before delete:', details);
     const updatedDetails = details.filter(d => d.line_number !== lineNumber);
-    console.log('🗑️ DEBUG: Details after delete:', updatedDetails);
     onChange(updatedDetails);
   };
 
@@ -221,25 +215,18 @@ export default function VoucherDetailsEditor({ details, onChange, readOnly = fal
 
   // Manejar selección de producto desde cache
   const handleProductSelect = (product: ProductSearchResult) => {
-    console.log('🔍 DEBUG: Product selected:', product);
-
-    // Obtener valores actuales del formulario
     const currentValues = getValues();
-    console.log('📋 DEBUG: Current form values:', currentValues);
 
     // Hacer reset con valores actuales + datos del producto
-    // Esto asegura que el DOM se actualice correctamente
     reset({
       ...currentValues,
-      product_id: product.id, // ✅ CLAVE: Pasar ID del producto al backend
+      product_id: product.id,
       item_name: product.name,
       item_description: product.description || currentValues.item_description || '',
       unit_of_measure: product.unit_of_measure,
-      part_number: product.part_number || currentValues.part_number || '', // ✅ FIX: Usar part_number correcto
-      category: product.category || currentValues.category, // Autocompletar categoría
+      part_number: product.part_number || currentValues.part_number || '',
+      category: product.category || currentValues.category,
     });
-
-    console.log('✅ DEBUG: Form reset with product data. Product ID:', product.id);
   };
 
   // Manejar tecla Enter

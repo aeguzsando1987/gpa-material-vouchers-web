@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { voucherService, ConfirmEntryRequest } from '@/lib/api/services/voucherService';
+import { voucherService } from '@/lib/api/services/voucherService';
+import { ConfirmEntryRequest } from '@/lib/types/voucher';
 import { toast } from 'sonner';
 
 interface UseConfirmEntryParams {

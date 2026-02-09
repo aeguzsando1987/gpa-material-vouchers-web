@@ -1,42 +1,78 @@
-import { format, parseISO } from 'date-fns';
-import { es } from 'date-fns/locale';
+/**
+ * Utilidades para manejo de fechas sin problemas de zona horaria
+ */
 
 /**
- * Formatea una fecha ISO a formato legible en español con hora
+ * Formatea una fecha en formato YYYY-MM-DD a string localizado sin conversión de zona horaria
  *
- * @param isoDate - Fecha en formato ISO (ej: "2025-12-02T10:30:00")
- * @returns Fecha formateada (ej: "2 de dic. de 2025, 10:30")
+ * @param dateString - Fecha en formato YYYY-MM-DD (ej: "2026-01-15")
+ * @param locale - Locale para formatear (default: 'es-MX')
+ * @param options - Opciones de formato de Intl.DateTimeFormat
+ * @returns Fecha formateada como string
  *
  * @example
- * formatLogDate("2025-12-02T10:30:00")
- * // Returns: "2 de dic. de 2025, 10:30"
+ * formatDateWithoutTimezone("2026-01-15") // "15 de enero de 2026"
+ * formatDateWithoutTimezone("2026-01-15", 'es-MX', { dateStyle: 'short' }) // "15/01/2026"
  */
-export const formatLogDate = (isoDate: string): string => {
-  try {
-    const date = parseISO(isoDate);
-    return format(date, "d 'de' MMM 'de' yyyy, HH:mm", { locale: es });
-  } catch (error) {
-    console.error('Error al formatear fecha:', error);
-    return isoDate; // Fallback: retornar fecha original si hay error
+export function formatDateWithoutTimezone(
+  dateString: string,
+  locale: string = 'es-MX',
+  options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
   }
-};
+): string {
+  if (!dateString) return '';
+
+  // Parsear la fecha como componentes locales (año, mes, día)
+  // Esto evita la conversión de zona horaria que ocurre con new Date("YYYY-MM-DD")
+  const [year, month, day] = dateString.split('-').map(Number);
+
+  // Crear Date con componentes locales (mes es 0-indexed)
+  const localDate = new Date(year, month - 1, day);
+
+  return localDate.toLocaleDateString(locale, options);
+}
 
 /**
- * Formatea una fecha ISO a formato corto sin hora
+ * Formatea una fecha ISO 8601 completa (con tiempo) a string localizado
  *
- * @param isoDate - Fecha en formato ISO (ej: "2025-12-02T10:30:00")
- * @returns Fecha formateada (ej: "02/12/2025")
+ * @param isoString - Fecha en formato ISO 8601 (ej: "2026-01-15T19:30:00.000Z")
+ * @param locale - Locale para formatear (default: 'es-MX')
+ * @param options - Opciones de formato de Intl.DateTimeFormat
+ * @returns Fecha y hora formateadas como string
  *
  * @example
- * formatShortDate("2025-12-02T10:30:00")
- * // Returns: "02/12/2025"
+ * formatDateTime("2026-01-15T19:30:00.000Z") // "15 de enero de 2026, 13:30:00"
  */
-export const formatShortDate = (isoDate: string): string => {
-  try {
-    const date = parseISO(isoDate);
-    return format(date, 'dd/MM/yyyy', { locale: es });
-  } catch (error) {
-    console.error('Error al formatear fecha:', error);
-    return isoDate; // Fallback: retornar fecha original si hay error
+export function formatDateTime(
+  isoString: string,
+  locale: string = 'es-MX',
+  options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit'
   }
-};
+): string {
+  if (!isoString) return '';
+
+  const date = new Date(isoString);
+  return date.toLocaleDateString(locale, options);
+}
+
+/**
+ * Convierte una fecha YYYY-MM-DD a objeto Date local (sin conversión UTC)
+ *
+ * @param dateString - Fecha en formato YYYY-MM-DD
+ * @returns Objeto Date con hora local en medianoche
+ */
+export function parseLocalDate(dateString: string): Date {
+  if (!dateString) return new Date();
+
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
