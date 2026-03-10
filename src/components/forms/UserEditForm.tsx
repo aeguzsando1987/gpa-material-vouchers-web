@@ -5,12 +5,16 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2, UserCircle, Shield } from 'lucide-react';
+import { Loader2, UserCircle, Shield, Building2 } from 'lucide-react';
 
 import { User } from '@/lib/types/user';
 import { Individual } from '@/lib/types/individual';
 import { useUpdateUser, useRoles } from '@/hooks/useUsers';
+import { useCompanies } from '@/hooks/useCompanies';
+import { useIndividuals } from '@/hooks/useIndividuals';
+import { useAuthStore } from '@/lib/store/authStore';
 import { individualService } from '@/lib/api/services/individualService';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -51,11 +55,31 @@ export default function UserEditForm({ user }: UserEditFormProps) {
   const router = useRouter();
   const { data: roles, isLoading: loadingRoles } = useRoles();
   const updateUser = useUpdateUser();
+  const { user: currentUser } = useAuthStore();
+  const isAdmin = currentUser?.role === 1;
 
   // Estado para el Individual asociado
   const [individual, setIndividual] = useState<Individual | null>(null);
   const [loadingIndividual, setLoadingIndividual] = useState(true);
   const [savingIndividual, setSavingIndividual] = useState(false);
+
+  // Estado para campos de empresa (fuera del schema Zod)
+  const [companyId, setCompanyId] = useState<number | undefined>(undefined);
+  const [allowedCompanyIds, setAllowedCompanyIds] = useState<number[]>([]);
+
+  // Estado para jerarquía organizacional
+  const [directSupervisorId, setDirectSupervisorId] = useState<number | undefined>(undefined);
+  const [ioManagerId, setIoManagerId] = useState<number | undefined>(undefined);
+
+  const { data: companiesData, isLoading: loadingCompanies } = useCompanies(1, 100, true);
+  const { data: allIndividuals = [] } = useIndividuals(0, 200, true);
+  const companies = companiesData?.data || [];
+
+  const companyOptions = Array.isArray(companies)
+    ? companies.map((c: any) => ({ value: c.id, label: c.company_name || c.name || `Empresa ${c.id}` }))
+    : [];
+
+  const allowedCompanyOptions = companyOptions.filter((c) => c.value !== companyId);
 
   const {
     register,
@@ -91,6 +115,18 @@ export default function UserEditForm({ user }: UserEditFormProps) {
           setValue('lastName', ind.last_name || '');
           setValue('phone', ind.phone || '');
           setValue('address', ind.address || '');
+
+          // Pre-cargar campos de empresa si el individual tiene empresa asignada
+          if ((ind as any).company_id) {
+            setCompanyId((ind as any).company_id);
+          }
+          if ((ind as any).allowed_company_ids) {
+            setAllowedCompanyIds((ind as any).allowed_company_ids || []);
+          }
+
+          // Pre-cargar jerarquía organizacional
+          if (ind.direct_supervisor_id) setDirectSupervisorId(ind.direct_supervisor_id);
+          if (ind.io_manager_id) setIoManagerId(ind.io_manager_id);
         }
       } catch (error) {
         // Usuario no tiene Individual asociado, es válido
@@ -145,6 +181,18 @@ export default function UserEditForm({ user }: UserEditFormProps) {
             individualUpdateData.address = data.address || null;
           }
 
+          // Campos de empresa (solo Admin)
+          if (isAdmin) {
+            if (companyId !== (individual as any).company_id) {
+              individualUpdateData.company_id = companyId ?? undefined;
+            }
+            individualUpdateData.allowed_company_ids = allowedCompanyIds;
+          }
+
+          // Jerarquía organizacional
+          individualUpdateData.direct_supervisor_id = directSupervisorId ?? null;
+          individualUpdateData.io_manager_id = ioManagerId ?? null;
+
           if (Object.keys(individualUpdateData).length > 0) {
             await individualService.update(individual.id, individualUpdateData);
             toast.success('Datos personales actualizados');
@@ -152,7 +200,7 @@ export default function UserEditForm({ user }: UserEditFormProps) {
         } else {
           // CREATE: No existe Individual, crear uno nuevo
           if (data.firstName && data.lastName) {
-            await individualService.create({
+            const createData: any = {
               name: data.firstName,
               last_name: data.lastName,
               email: data.email || user.email,
@@ -160,12 +208,35 @@ export default function UserEditForm({ user }: UserEditFormProps) {
               address: data.address || undefined,
               user_id: user.id,
               status: 'active',
-            });
+            };
+
+            // Campos de empresa (solo Admin)
+            if (isAdmin && companyId) {
+              createData.company_id = companyId;
+              createData.allowed_company_ids = allowedCompanyIds;
+            }
+
+            await individualService.create(createData);
             toast.success('Datos personales creados');
           }
         }
 
         setSavingIndividual(false);
+      } else if (isAdmin && individual) {
+        // Solo actualizar empresa si Admin cambió campos de empresa aunque no haya datos personales nuevos
+        const companyChanged =
+          companyId !== (individual as any).company_id ||
+          JSON.stringify(allowedCompanyIds) !== JSON.stringify((individual as any).allowed_company_ids || []);
+
+        if (companyChanged) {
+          setSavingIndividual(true);
+          await individualService.update(individual.id, {
+            company_id: companyId ?? undefined,
+            allowed_company_ids: allowedCompanyIds,
+          });
+          toast.success('Empresas actualizadas');
+          setSavingIndividual(false);
+        }
       }
 
       router.push('/admin/users');
@@ -349,6 +420,141 @@ export default function UserEditForm({ user }: UserEditFormProps) {
           )}
         </CardContent>
       </Card>
+
+      {/* Configuración de Empresa — SOLO ADMIN */}
+      {isAdmin && !loadingIndividual && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Configuración de Empresa
+            </CardTitle>
+            <CardDescription>
+              Asigna la empresa principal y las empresas adicionales que este usuario puede gestionar.
+              {companyId && (
+                <span className="block mt-1 text-blue-600 text-sm">
+                  Empresa actual: {companyOptions.find((c) => c.value === companyId)?.label ?? `ID ${companyId}`}
+                </span>
+              )}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Empresa Principal */}
+              <div className="space-y-2">
+                <Label htmlFor="company_id_edit">Empresa Principal</Label>
+                <Select
+                  value={companyId?.toString() ?? ''}
+                  onValueChange={(val) => {
+                    const id = parseInt(val);
+                    setCompanyId(id);
+                    setAllowedCompanyIds((prev) => prev.filter((c) => c !== id));
+                  }}
+                  disabled={loadingCompanies}
+                >
+                  <SelectTrigger id="company_id_edit">
+                    <SelectValue placeholder="Selecciona empresa..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyOptions.map((c) => (
+                      <SelectItem key={c.value} value={c.value.toString()}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Empresa a la que pertenece el empleado
+                </p>
+              </div>
+
+              {/* Empresas Adicionales */}
+              <div className="space-y-2">
+                <Label>Empresas Adicionales</Label>
+                <MultiSelect
+                  value={allowedCompanyIds}
+                  onChange={setAllowedCompanyIds}
+                  options={allowedCompanyOptions}
+                  placeholder="Selecciona empresas adicionales..."
+                  disabled={loadingCompanies}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Empresas adicionales que puede gestionar (opcional)
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Jerarquía Organizacional — solo si tiene Individual */}
+      {individual && !loadingIndividual && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Jerarquía Organizacional
+            </CardTitle>
+            <CardDescription>
+              Define quién es el jefe directo y el encargado de entradas/salidas.
+              Estos datos se usan para el envío automático de correos al crear vales.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Jefe Directo */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Jefe Directo</label>
+                <Select
+                  value={directSupervisorId?.toString() ?? ''}
+                  onValueChange={(val) => setDirectSupervisorId(val ? parseInt(val) : undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin jefe directo asignado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allIndividuals
+                      .filter((ind) => ind.id !== individual?.id)
+                      .map((ind) => (
+                        <SelectItem key={ind.id} value={ind.id.toString()}>
+                          {ind.name} {ind.last_name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Recibe copia del correo al crear un vale
+                </p>
+              </div>
+
+              {/* Encargado IO */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Encargado de Entradas/Salidas</label>
+                <Select
+                  value={ioManagerId?.toString() ?? ''}
+                  onValueChange={(val) => setIoManagerId(val ? parseInt(val) : undefined)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sin encargado asignado" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allIndividuals
+                      .filter((ind) => ind.id !== individual?.id)
+                      .map((ind) => (
+                        <SelectItem key={ind.id} value={ind.id.toString()}>
+                          {ind.name} {ind.last_name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Recibe copia del correo al crear un vale (por defecto: Hocejo)
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Botones de Acción */}
       <div className="flex gap-4 justify-end">

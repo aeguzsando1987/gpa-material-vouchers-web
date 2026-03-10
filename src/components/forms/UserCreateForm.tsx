@@ -4,9 +4,15 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Loader2, Building2 } from 'lucide-react';
 
 import { useCreateUserWithIndividual, useRoles } from '@/hooks/useUsers';
+import { useCompanies } from '@/hooks/useCompanies';
+import { useIndividuals } from '@/hooks/useIndividuals';
+import { useAuthStore } from '@/lib/store/authStore';
+import { individualService } from '@/lib/api/services/individualService';
+import { MultiSelect } from '@/components/ui/multi-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +46,20 @@ export default function UserCreateForm() {
   const router = useRouter();
   const { data: roles, isLoading: loadingRoles } = useRoles();
   const createUser = useCreateUserWithIndividual();
+  const { user: currentUser } = useAuthStore();
+  const isAdmin = currentUser?.role === 1;
+
+  // Estado para campos de empresa (fuera del schema Zod para mayor flexibilidad)
+  const [companyId, setCompanyId] = useState<number | undefined>(undefined);
+  const [allowedCompanyIds, setAllowedCompanyIds] = useState<number[]>([]);
+
+  // Estado para jerarquía organizacional
+  const [directSupervisorId, setDirectSupervisorId] = useState<number | undefined>(undefined);
+  const [ioManagerId, setIoManagerId] = useState<number | undefined>(undefined);
+
+  const { data: companiesData, isLoading: loadingCompanies } = useCompanies(1, 100, true);
+  const { data: allIndividuals = [] } = useIndividuals(0, 200, true);
+  const companies = companiesData?.data || [];
 
   const {
     register,
@@ -58,12 +78,32 @@ export default function UserCreateForm() {
 
   const onSubmit = async (data: UserCreateFormData) => {
     try {
-      await createUser.mutateAsync(data);
+      const payload: any = { ...data };
+      if (isAdmin && companyId) {
+        payload.company_id = companyId;
+        payload.allowed_company_ids = allowedCompanyIds;
+      }
+      const result = await createUser.mutateAsync(payload);
+
+      // Si se seleccionó jerarquía, actualizar el individual recién creado
+      if ((directSupervisorId || ioManagerId) && result?.individual?.id) {
+        await individualService.update(result.individual.id, {
+          direct_supervisor_id: directSupervisorId ?? null,
+          io_manager_id: ioManagerId ?? null,
+        });
+      }
+
       router.push('/admin/users');
     } catch (error) {
       // Error handled by hook
     }
   };
+
+  const companyOptions = Array.isArray(companies)
+    ? companies.map((c: any) => ({ value: c.id, label: c.company_name || c.name || `Empresa ${c.id}` }))
+    : [];
+
+  const allowedCompanyOptions = companyOptions.filter((c) => c.value !== companyId);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -211,6 +251,125 @@ export default function UserCreateForm() {
               {errors.address && (
                 <p className="text-sm text-red-500">{errors.address.message}</p>
               )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Configuración de Empresa — SOLO ADMIN */}
+      {isAdmin && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5" />
+              Configuración de Empresa
+            </CardTitle>
+            <CardDescription>
+              Asigna la empresa principal y las empresas adicionales que este usuario puede gestionar
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Empresa Principal */}
+              <div className="space-y-2">
+                <Label htmlFor="company_id">Empresa Principal</Label>
+                <Select
+                  value={companyId?.toString() ?? ''}
+                  onValueChange={(val) => {
+                    const id = parseInt(val);
+                    setCompanyId(id);
+                    // Quitar la empresa principal de allowed si estaba
+                    setAllowedCompanyIds((prev) => prev.filter((c) => c !== id));
+                  }}
+                  disabled={loadingCompanies}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona empresa..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {companyOptions.map((c) => (
+                      <SelectItem key={c.value} value={c.value.toString()}>
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Empresa a la que pertenece el empleado
+                </p>
+              </div>
+
+              {/* Empresas Adicionales */}
+              <div className="space-y-2">
+                <Label>Empresas Adicionales</Label>
+                <MultiSelect
+                  value={allowedCompanyIds}
+                  onChange={setAllowedCompanyIds}
+                  options={allowedCompanyOptions}
+                  placeholder="Selecciona empresas adicionales..."
+                  disabled={loadingCompanies}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Empresas adicionales que puede gestionar (opcional)
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Jerarquía Organizacional */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="h-5 w-5" />
+            Jerarquía Organizacional
+          </CardTitle>
+          <CardDescription>
+            Define quién es el jefe directo y el encargado de entradas/salidas.
+            Estos datos se usan para el envío automático de correos al crear vales.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Jefe Directo</Label>
+              <Select
+                value={directSupervisorId?.toString() ?? ''}
+                onValueChange={(val) => setDirectSupervisorId(val ? parseInt(val) : undefined)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin jefe directo asignado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allIndividuals.map((ind) => (
+                    <SelectItem key={ind.id} value={ind.id.toString()}>
+                      {ind.name} {ind.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Recibe copia del correo al crear un vale</p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Encargado de Entradas/Salidas</Label>
+              <Select
+                value={ioManagerId?.toString() ?? ''}
+                onValueChange={(val) => setIoManagerId(val ? parseInt(val) : undefined)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin encargado asignado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {allIndividuals.map((ind) => (
+                    <SelectItem key={ind.id} value={ind.id.toString()}>
+                      {ind.name} {ind.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">Recibe copia del correo al crear un vale (por defecto: Hocejo)</p>
             </div>
           </div>
         </CardContent>

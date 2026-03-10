@@ -12,6 +12,10 @@ export interface Individual {
   status: string;
   is_active: boolean;
   created_at: string;
+  direct_supervisor_id?: number | null;
+  io_manager_id?: number | null;
+  direct_supervisor_name?: string | null;
+  io_manager_name?: string | null;
 }
 
 export interface IndividualWithUserInput {
@@ -30,6 +34,10 @@ export interface IndividualWithUserInput {
   phone?: string;
   address?: string;
   status?: string;
+
+  // Empresa (solo Admin puede asignar)
+  company_id?: number;
+  allowed_company_ids?: number[];
 }
 
 export interface IndividualWithUserResponse {
@@ -69,4 +77,8 @@ export interface IndividualUpdateInput {
   phone?: string;
   address?: string;
   status?: string;
+  company_id?: number;
+  allowed_company_ids?: number[];
+  direct_supervisor_id?: number | null;
+  io_manager_id?: number | null;
 }
