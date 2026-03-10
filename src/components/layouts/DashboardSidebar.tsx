@@ -13,6 +13,7 @@ import {
   MapPin,
   Package,
   PackageCheck,
+  Mail,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 
@@ -66,6 +67,14 @@ const menuItems: MenuItem[] = [
     roles: [1, 2, 3, 6], // Admin, Manager, Supervisor, Checker
   },
 
+  // Administración del sistema
+  {
+    label: 'Config. Correo',
+    href: '/admin/email-config',
+    icon: Mail,
+    roles: [1], // Solo Admin
+  },
+
   // Misceláneos
   {
     label: 'Compañías',
@@ -100,7 +109,7 @@ export default function DashboardSidebar() {
   if (!user) return null;
 
   return (
-    <aside className="w-64 bg-white border-r border-neutral-200 min-h-screen flex flex-col">
+    <aside className="hidden md:flex w-64 bg-white border-r border-neutral-200 min-h-screen flex-col">
       {/* Logo/Brand */}
       <div className="p-6 border-b border-neutral-200">
         <h1 className="text-2xl font-bold text-neutral-900">Sistema de Vales de entrada y salida de material GPA</h1>

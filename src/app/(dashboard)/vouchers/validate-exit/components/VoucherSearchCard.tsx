@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Search, Loader2, FileText, Calendar } from 'lucide-react';
 import { voucherService } from '@/lib/api/services/voucherService';
+import QRScannerButton from '@/components/vouchers/QRScannerButton';
 import { Voucher } from '@/lib/types/voucher';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -105,6 +106,52 @@ export default function VoucherSearchCard({
     }
   };
 
+  // Manejar escaneo QR
+  const handleQRScan = (scannedText: string) => {
+    const trimmed = scannedText.trim();
+    if (!trimmed) return;
+
+    // Si es un token QR del sistema (formato: voucher:{id}:token:{hash}), extraer el ID directamente
+    const qrTokenMatch = trimmed.match(/^voucher:(\d+):token:[a-f0-9]+$/);
+    if (qrTokenMatch) {
+      const voucherId = parseInt(qrTokenMatch[1], 10);
+      toast.success('QR escaneado correctamente', {
+        description: 'Cargando vale...',
+      });
+      onSelectVoucher(voucherId);
+      return;
+    }
+
+    // Si no es un token QR, buscar por folio
+    setSearchTerm(trimmed);
+    setIsSearching(true);
+    voucherService.search({
+      search_term: trimmed,
+      status: 'APPROVED',
+      voucher_type: 'EXIT',
+      limit: 10,
+    }).then((vouchers) => {
+      if (vouchers.length === 0) {
+        toast.error('Vale no encontrado', {
+          description: `No se encontró un vale APROBADO con folio "${trimmed}"`,
+        });
+      } else if (vouchers.length === 1) {
+        onSelectVoucher(vouchers[0].id);
+        setSearchTerm('');
+      } else {
+        setApprovedVouchers(vouchers);
+        toast.success(`Se encontraron ${vouchers.length} vales`);
+        setSearchTerm('');
+      }
+    }).catch((error: any) => {
+      toast.error('Error al buscar vale', {
+        description: error.response?.data?.detail || 'Intenta de nuevo',
+      });
+    }).finally(() => {
+      setIsSearching(false);
+    });
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -143,7 +190,15 @@ export default function VoucherSearchCard({
               )}
               <span className="ml-2 hidden sm:inline">Buscar</span>
             </Button>
+            <QRScannerButton
+              onScan={handleQRScan}
+              disabled={isSearching || isLoading}
+              label=""
+            />
           </div>
+          <p className="text-xs text-muted-foreground">
+            Ingresa el folio manualmente o usa el botón de cámara para escanear el QR del vale
+          </p>
         </div>
 
         {/* Divider */}

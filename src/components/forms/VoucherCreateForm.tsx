@@ -79,6 +79,20 @@ export default function VoucherCreateForm() {
 
   const { data: companiesResponse, isLoading: loadingCompanies } = useCompanies(1, 100, true);
 
+  // Filtrar empresas según el rol del usuario:
+  // - Admin (role=1): ve todas las empresas
+  // - Otros roles: solo ven sus empresas asignadas (company_id + allowed_company_ids)
+  const allCompanies = companiesResponse?.data || [];
+  const filteredCompanies = user?.role === 1
+    ? allCompanies
+    : allCompanies.filter((company) => {
+        const accessibleIds = [
+          ...(user?.company_id ? [user.company_id] : []),
+          ...(user?.allowed_company_ids || []),
+        ];
+        return accessibleIds.includes(company.id);
+      });
+
   const {
     register,
     handleSubmit,
@@ -236,7 +250,7 @@ export default function VoucherCreateForm() {
                   <SelectValue placeholder="Selecciona empresa" />
                 </SelectTrigger>
                 <SelectContent>
-                  {companiesResponse?.data?.map((company) => (
+                  {filteredCompanies.map((company) => (
                     <SelectItem key={company.id} value={company.id.toString()}>
                       {company.company_name}
                     </SelectItem>

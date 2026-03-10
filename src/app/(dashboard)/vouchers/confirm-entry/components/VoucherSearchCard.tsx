@@ -16,6 +16,7 @@ import {
   FileText,
 } from 'lucide-react';
 import { voucherService } from '@/lib/api/services/voucherService';
+import QRScannerButton from '@/components/vouchers/QRScannerButton';
 import { VoucherWithDetails } from '@/lib/types/voucher';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -184,10 +185,52 @@ export default function VoucherSearchCard({ onSelectVoucher }: VoucherSearchCard
   };
 
   // Manejar tecla Enter en búsqueda
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       handleSearch();
     }
+  };
+
+  // Manejar escaneo QR
+  const handleQRScan = (scannedText: string) => {
+    const trimmed = scannedText.trim();
+    if (!trimmed) return;
+
+    // Si es un token QR del sistema (formato: voucher:{id}:token:{hash}), extraer el ID directamente
+    const qrTokenMatch = trimmed.match(/^voucher:(\d+):token:[a-f0-9]+$/);
+    if (qrTokenMatch) {
+      const voucherId = parseInt(qrTokenMatch[1], 10);
+      toast.success('QR escaneado correctamente', {
+        description: 'Cargando vale...',
+      });
+      onSelectVoucher(voucherId);
+      return;
+    }
+
+    // Si no es un token QR, buscar por folio
+    setSearchValue(trimmed);
+    voucherService.search({
+      search_term: trimmed,
+      limit: 10,
+    }).then((vouchers) => {
+      if (vouchers.length === 0) {
+        toast.error('Vale no encontrado', {
+          description: `No se encontró un vale con folio "${trimmed}"`
+        });
+      } else if (vouchers.length === 1) {
+        onSelectVoucher(vouchers[0].id);
+        toast.success('Vale encontrado', {
+          description: `Folio: ${vouchers[0].folio}`
+        });
+      } else {
+        setVouchersList(vouchers);
+        toast.success(`${vouchers.length} vales encontrados`);
+      }
+    }).catch((error: any) => {
+      toast.error('Error al buscar vale', {
+        description: error.response?.data?.detail || 'Intenta de nuevo'
+      });
+    });
   };
 
   return (
@@ -203,27 +246,38 @@ export default function VoucherSearchCard({ onSelectVoucher }: VoucherSearchCard
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Búsqueda manual */}
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            placeholder="Buscar por folio..."
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            disabled={isSearching}
-          />
-          <Button
-            onClick={handleSearch}
-            disabled={isSearching || !searchValue.trim()}
-            className="shrink-0"
-          >
-            {isSearching ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Search className="h-4 w-4" />
-            )}
-          </Button>
+        {/* Búsqueda manual + QR */}
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              placeholder="Buscar por folio..."
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              disabled={isSearching}
+              className="flex-1"
+            />
+            <Button
+              onClick={handleSearch}
+              disabled={isSearching || !searchValue.trim()}
+              className="shrink-0"
+            >
+              {isSearching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Search className="h-4 w-4" />
+              )}
+            </Button>
+            <QRScannerButton
+              onScan={handleQRScan}
+              disabled={isSearching}
+              label=""
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Ingresa el folio manualmente o usa el botón de cámara para escanear el QR del vale
+          </p>
         </div>
 
         {/* Tabs por categoría */}

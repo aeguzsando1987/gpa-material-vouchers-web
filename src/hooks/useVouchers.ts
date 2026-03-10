@@ -39,7 +39,7 @@ export function useVouchers(filters?: VoucherFilters) {
 export function useVoucher(id: number) {
   return useQuery({
     queryKey: voucherKeys.detail(id),
-    queryFn: () => voucherService.getById(id),
+    queryFn: () => voucherService.getById(id, { detailed: true }),
     enabled: !!id,
   });
 }

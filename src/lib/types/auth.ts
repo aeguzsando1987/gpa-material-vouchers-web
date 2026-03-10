@@ -6,6 +6,9 @@ export interface User {
   name: string; // Nombre del usuario
   role: number; // 1=Admin, 2=Manager, 3=Collaborator, 4=Reader, 5=Guest, 6=Checker
   individual_id?: number;
+  company_id?: number;
+  allowed_company_ids?: number[];
+  accessible_company_ids?: number[];
   is_active: boolean;
   created_at: string;
 }

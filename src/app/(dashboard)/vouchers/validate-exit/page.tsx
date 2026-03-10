@@ -112,7 +112,7 @@ export default function ValidateExitPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold flex items-center gap-2">
+        <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
           <CheckCircle className="h-8 w-8 text-green-600" />
           Check de Salida
         </h1>
@@ -145,9 +145,9 @@ export default function ValidateExitPage() {
       )}
 
       {/* Layout de dos columnas */}
-      <div className="grid grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Columna izquierda - Lista de vales */}
-        <div className="col-span-4">
+        <div className="lg:col-span-4">
           <VoucherSearchCard
             onSelectVoucher={handleSelectVoucher}
             isLoading={isLoadingVoucher}
@@ -156,7 +156,7 @@ export default function ValidateExitPage() {
         </div>
 
         {/* Columna derecha - Detalle del vale */}
-        <div className="col-span-8">
+        <div className="lg:col-span-8">
           {/* Loading state */}
           {isLoadingVoucher && (
             <Card>
