@@ -157,6 +157,7 @@ export default function EmailConfigPage() {
           <CardDescription>
             Para Gmail: usar App Password (no la contraseña normal).<br />
             Obtenerla en: myaccount.google.com → Seguridad → Contraseñas de aplicación
+            Debe habilitar antes la verificación de dos factores.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
