@@ -145,16 +145,14 @@ export default function VoucherCreateForm() {
       // Remover el campo temporal
       delete apiData.form_voucher_type;
 
-      // FIX: Asegurar que estimated_return_date se envíe como YYYY-MM-DD sin zona horaria
-      // Esto previene que el backend convierta la fecha a UTC y reste un día
-      if (apiData.estimated_return_date) {
-        // Si ya está en formato YYYY-MM-DD, mantenerlo; si no, extraer solo la fecha
-        const dateStr = apiData.estimated_return_date;
-        if (dateStr.includes('T')) {
-          // Tiene componente de tiempo, extraer solo la fecha
-          apiData.estimated_return_date = dateStr.split('T')[0];
-        }
-        // Ya está en formato YYYY-MM-DD, no hacer nada más
+      // Limpiar estimated_return_date: eliminar si está vacío (vale sin retorno)
+      // Un string vacío "" del <input type="date"> causa error 422 en el backend
+      if (!apiData.estimated_return_date) {
+        delete apiData.estimated_return_date;
+      } else {
+        // Normalizar a YYYY-MM-DD sin zona horaria
+        const dateStr = apiData.estimated_return_date as string;
+        apiData.estimated_return_date = dateStr.includes('T') ? dateStr.split('T')[0] : dateStr;
       }
 
       // 1. Crear el voucher

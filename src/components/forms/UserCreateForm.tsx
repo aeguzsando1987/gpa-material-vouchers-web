@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useState } from 'react';
+import { Controller } from 'react-hook-form';
 import { Loader2, Building2 } from 'lucide-react';
 
 import { useCreateUserWithIndividual, useRoles } from '@/hooks/useUsers';
@@ -64,8 +65,7 @@ export default function UserCreateForm() {
   const {
     register,
     handleSubmit,
-    setValue,
-    watch,
+    control,
     formState: { errors },
   } = useForm<UserCreateFormData>({
     resolver: zodResolver(userCreateSchema),
@@ -73,8 +73,6 @@ export default function UserCreateForm() {
       user_role: 4, // Default: Lector
     },
   });
-
-  const selectedRole = watch('user_role');
 
   const onSubmit = async (data: UserCreateFormData) => {
     try {
@@ -157,22 +155,28 @@ export default function UserCreateForm() {
 
             <div className="space-y-2">
               <Label htmlFor="user_role">Rol del Usuario *</Label>
-              <Select
-                value={selectedRole?.toString()}
-                onValueChange={(value) => setValue('user_role', parseInt(value))}
-                disabled={loadingRoles}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un rol" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles?.map((role) => (
-                    <SelectItem key={role.id} value={role.id.toString()}>
-                      {role.name} - {role.description}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Controller
+                control={control}
+                name="user_role"
+                render={({ field }) => (
+                  <Select
+                    value={field.value?.toString()}
+                    onValueChange={(value) => field.onChange(parseInt(value))}
+                    disabled={loadingRoles}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un rol" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {roles?.map((role) => (
+                        <SelectItem key={role.id} value={role.id.toString()}>
+                          {role.name} - {role.description}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              />
               {errors.user_role && (
                 <p className="text-sm text-red-500">{errors.user_role.message}</p>
               )}

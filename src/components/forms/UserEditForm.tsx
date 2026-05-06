@@ -26,7 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
+import toast from 'react-hot-toast';
 
 const userEditSchema = z.object({
   // Datos del usuario
@@ -240,9 +240,13 @@ export default function UserEditForm({ user }: UserEditFormProps) {
       }
 
       router.push('/admin/users');
-    } catch (error) {
+    } catch (error: any) {
       setSavingIndividual(false);
-      // Error handled by hooks
+      const detail = error?.response?.data?.detail;
+      const msg = typeof detail === 'string'
+        ? detail
+        : (typeof detail?.message === 'string' ? detail.message : null);
+      toast.error(msg || 'Error al guardar los cambios');
     }
   };
 

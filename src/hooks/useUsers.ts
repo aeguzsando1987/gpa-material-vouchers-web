@@ -5,6 +5,25 @@ import { UserUpdateInput } from '@/lib/types/user';
 import { IndividualWithUserInput } from '@/lib/types/individual';
 import toast from 'react-hot-toast';
 
+function extractErrorMessage(error: any, fallback: string): string {
+  const detail = error?.response?.data?.detail;
+  if (!detail) return fallback;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const msg = detail
+      .map((err: any) => {
+        const field = err?.loc ? String(err.loc[err.loc.length - 1]) : 'campo';
+        return `${field}: ${String(err?.msg ?? '')}`;
+      })
+      .join('\n');
+    return msg || 'Error de validación';
+  }
+  if (typeof detail === 'object') {
+    return typeof detail.message === 'string' ? detail.message : fallback;
+  }
+  return fallback;
+}
+
 // Query keys
 export const userKeys = {
   all: ['users'] as const,
@@ -62,30 +81,7 @@ export function useCreateUserWithIndividual() {
       toast.success('Usuario creado exitosamente');
     },
     onError: (error: any) => {
-      // Manejar errores de validación de FastAPI (422)
-      let message = 'Error al crear usuario';
-
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-
-        if (typeof detail === 'string') {
-          // Error simple (string)
-          message = detail;
-        } else if (Array.isArray(detail)) {
-          // Errores de validación de Pydantic (422)
-          // Formato: [{loc: [...], msg: "...", type: "..."}]
-          const errors = detail.map((err: any) => {
-            const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
-            return `${field}: ${err.msg}`;
-          }).join('\n');
-          message = errors || 'Error de validación';
-        } else if (typeof detail === 'object' && detail.message) {
-          // Objeto con message
-          message = detail.message;
-        }
-      }
-
-      toast.error(message);
+      toast.error(extractErrorMessage(error, 'Error al crear usuario'));
     },
   });
 }
@@ -105,25 +101,7 @@ export function useUpdateUser() {
       toast.success('Usuario actualizado exitosamente');
     },
     onError: (error: any) => {
-      let message = 'Error al actualizar usuario';
-
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-
-        if (typeof detail === 'string') {
-          message = detail;
-        } else if (Array.isArray(detail)) {
-          const errors = detail.map((err: any) => {
-            const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
-            return `${field}: ${err.msg}`;
-          }).join('\n');
-          message = errors || 'Error de validación';
-        } else if (typeof detail === 'object' && detail.message) {
-          message = detail.message;
-        }
-      }
-
-      toast.error(message);
+      toast.error(extractErrorMessage(error, 'Error al actualizar usuario'));
     },
   });
 }
@@ -141,25 +119,7 @@ export function useDeleteUser() {
       toast.success('Usuario eliminado exitosamente');
     },
     onError: (error: any) => {
-      let message = 'Error al eliminar usuario';
-
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-
-        if (typeof detail === 'string') {
-          message = detail;
-        } else if (Array.isArray(detail)) {
-          const errors = detail.map((err: any) => {
-            const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
-            return `${field}: ${err.msg}`;
-          }).join('\n');
-          message = errors || 'Error de validación';
-        } else if (typeof detail === 'object' && detail.message) {
-          message = detail.message;
-        }
-      }
-
-      toast.error(message);
+      toast.error(extractErrorMessage(error, 'Error al eliminar usuario'));
     },
   });
 }
@@ -178,25 +138,7 @@ export function useActivateUser() {
       toast.success('Usuario activado exitosamente');
     },
     onError: (error: any) => {
-      let message = 'Error al activar usuario';
-
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-
-        if (typeof detail === 'string') {
-          message = detail;
-        } else if (Array.isArray(detail)) {
-          const errors = detail.map((err: any) => {
-            const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
-            return `${field}: ${err.msg}`;
-          }).join('\n');
-          message = errors || 'Error de validación';
-        } else if (typeof detail === 'object' && detail.message) {
-          message = detail.message;
-        }
-      }
-
-      toast.error(message);
+      toast.error(extractErrorMessage(error, 'Error al activar usuario'));
     },
   });
 }
@@ -215,25 +157,7 @@ export function useDeactivateUser() {
       toast.success('Usuario desactivado exitosamente');
     },
     onError: (error: any) => {
-      let message = 'Error al desactivar usuario';
-
-      if (error.response?.data?.detail) {
-        const detail = error.response.data.detail;
-
-        if (typeof detail === 'string') {
-          message = detail;
-        } else if (Array.isArray(detail)) {
-          const errors = detail.map((err: any) => {
-            const field = err.loc ? err.loc[err.loc.length - 1] : 'campo';
-            return `${field}: ${err.msg}`;
-          }).join('\n');
-          message = errors || 'Error de validación';
-        } else if (typeof detail === 'object' && detail.message) {
-          message = detail.message;
-        }
-      }
-
-      toast.error(message);
+      toast.error(extractErrorMessage(error, 'Error al desactivar usuario'));
     },
   });
 }
