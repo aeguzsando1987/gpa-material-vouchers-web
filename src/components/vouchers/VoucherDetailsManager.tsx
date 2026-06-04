@@ -1,19 +1,50 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import VoucherDetailsEditor, { VoucherDetailDraft } from './VoucherDetailsEditor';
-import { useVoucherDetails, useCreateVoucherDetail, useUpdateVoucherDetail, useDeleteVoucherDetail } from '@/hooks/useVoucherDetails';
-import { VoucherDetail } from '@/lib/types/voucherDetail';
-import { Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Loader2, Save, RotateCcw, Pencil } from 'lucide-react';
+import toast from 'react-hot-toast';
+import VoucherLinesTable from './VoucherLinesTable';
+import {
+  useVoucherDetails,
+  useCreateVoucherDetail,
+  useUpdateVoucherDetail,
+  useDeleteVoucherDetail,
+} from '@/hooks/useVoucherDetails';
+import { VoucherDetail, VoucherDetailDraft } from '@/lib/types/voucherDetail';
+import { ProductCategory } from '@/lib/types/product';
+import { Button } from '@/components/ui/button';
 
 interface VoucherDetailsManagerProps {
   voucherId: number;
   canEdit: boolean;
 }
 
+// Mapea una línea del backend a draft.
+// - quantity llega como Decimal serializado en string ("1.00") → lo pasamos a número.
+// - la categoría no es campo de la línea: el backend la expone como product_category.
+// - normalizamos opcionales vacíos a undefined para que el diff (isDirty/modified)
+//   coincida con lo que emite la tabla y no marque líneas como cambiadas sin serlo.
+const toDraft = (detail: VoucherDetail): VoucherDetailDraft => ({
+  line_number: detail.line_number,
+  product_id: detail.product_id,
+  item_name: detail.item_name,
+  item_description: detail.item_description || undefined,
+  quantity: Number(detail.quantity),
+  unit_of_measure: detail.unit_of_measure,
+  serial_number: detail.serial_number || undefined,
+  part_number: detail.part_number || undefined,
+  category: detail.product_category
+    ? (detail.product_category as ProductCategory)
+    : undefined,
+  notes: detail.notes || undefined,
+});
+
 /**
- * Componente manager que conecta VoucherDetailsEditor con el backend.
- * Convierte detalles del backend (con IDs) a formato draft y sincroniza cambios.
+ * Conecta la tabla de líneas (VoucherLinesTable) con el backend.
+ *
+ * La tabla edita en estado LOCAL (emite onChange por cada cambio). La
+ * persistencia NO es por tecla: se ejecuta al pulsar "Guardar cambios",
+ * calculando el diff (altas/bajas/modificaciones) contra lo que hay en backend.
  */
 export default function VoucherDetailsManager({ voucherId, canEdit }: VoucherDetailsManagerProps) {
   const { data: backendDetails, isLoading } = useVoucherDetails(voucherId);
@@ -21,133 +52,107 @@ export default function VoucherDetailsManager({ voucherId, canEdit }: VoucherDet
   const updateDetail = useUpdateVoucherDetail();
   const deleteDetail = useDeleteVoucherDetail();
 
-  // Estado local de detalles en formato draft (sin IDs de BD)
   const [draftDetails, setDraftDetails] = useState<VoucherDetailDraft[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  // Por defecto la tabla se ve en modo consulta; se edita al pulsar "Editar líneas".
+  const [isEditing, setIsEditing] = useState(false);
 
-  // Map para trackear qué líneas tienen ID en backend
-  const [lineIdMap, setLineIdMap] = useState<Map<number, number>>(new Map());
-
-  // Sincronizar detalles del backend a estado local
-  useEffect(() => {
-    if (backendDetails) {
-      const drafts: VoucherDetailDraft[] = backendDetails.map((detail: VoucherDetail) => ({
-        line_number: detail.line_number,
-        product_id: detail.product_id,
-        item_name: detail.item_name,
-        item_description: detail.item_description,
-        quantity: detail.quantity,
-        unit_of_measure: detail.unit_of_measure,
-        serial_number: detail.serial_number,
-        part_number: detail.part_number,
-        // category is not returned by backend, only used for creation
-        notes: detail.notes,
-      }));
-
-      // Crear map de line_number → id
-      const newMap = new Map<number, number>();
-      backendDetails.forEach((detail: VoucherDetail) => {
-        newMap.set(detail.line_number, detail.id);
-      });
-
-      setDraftDetails(drafts);
-      setLineIdMap(newMap);
-    }
+  // Baseline = estado actual en backend (para diff y para detectar cambios).
+  const baseline = useMemo<VoucherDetailDraft[]>(
+    () => (backendDetails ?? []).map(toDraft),
+    [backendDetails]
+  );
+  // line_number → id de BD, para saber qué líneas ya existen.
+  const lineIdMap = useMemo(() => {
+    const map = new Map<number, number>();
+    (backendDetails ?? []).forEach((d) => map.set(d.line_number, d.id));
+    return map;
   }, [backendDetails]);
 
-  // Handler cuando el usuario modifica detalles en VoucherDetailsEditor
-  const handleDetailsChange = async (newDetails: VoucherDetailDraft[]) => {
-    // Detectar qué cambió
-    const previousLineNumbers = new Set(draftDetails.map(d => d.line_number));
-    const newLineNumbers = new Set(newDetails.map(d => d.line_number));
+  // Adoptar el estado de backend cuando carga/cambia (p. ej. tras guardar y refetch).
+  useEffect(() => {
+    setDraftDetails(baseline);
+  }, [baseline]);
 
-    // 1. Detectar líneas NUEVAS (no existen en backend)
-    const addedLines = newDetails.filter(d => !lineIdMap.has(d.line_number));
+  const isDirty = JSON.stringify(draftDetails) !== JSON.stringify(baseline);
 
-    // 2. Detectar líneas ELIMINADAS
-    const deletedLineNumbers = Array.from(previousLineNumbers).filter(ln => !newLineNumbers.has(ln));
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const draftLineNumbers = new Set(draftDetails.map((d) => d.line_number));
 
-    // 3. Detectar líneas MODIFICADAS (existen en backend y cambiaron)
-    const modifiedLines = newDetails.filter(newDetail => {
-      if (!lineIdMap.has(newDetail.line_number)) return false; // Es nueva, no modificada
+      const added = draftDetails.filter((d) => !lineIdMap.has(d.line_number));
+      const deleted = baseline.filter((d) => !draftLineNumbers.has(d.line_number));
+      const modified = draftDetails.filter((d) => {
+        if (!lineIdMap.has(d.line_number)) return false;
+        const old = baseline.find((b) => b.line_number === d.line_number);
+        return old && JSON.stringify(old) !== JSON.stringify(d);
+      });
 
-      const oldDetail = draftDetails.find(d => d.line_number === newDetail.line_number);
-      if (!oldDetail) return false;
-
-      // Comparar si cambió algo
-      return JSON.stringify(oldDetail) !== JSON.stringify(newDetail);
-    });
-
-    // NO actualizar estado local inmediatamente para evitar race conditions
-    // Dejar que React Query refetch maneje la actualización después de cada operación
-
-    // 4. Ejecutar operaciones en backend
-
-    // 4.1. ELIMINAR líneas
-    for (const lineNumber of deletedLineNumbers) {
-      const detailId = lineIdMap.get(lineNumber);
-      if (detailId) {
-        try {
-          await deleteDetail.mutateAsync({ id: detailId, voucherId });
-
-          // Actualizar map
-          const newMap = new Map(lineIdMap);
-          newMap.delete(lineNumber);
-          setLineIdMap(newMap);
-        } catch (error) {
-          console.error(`Error deleting line ${lineNumber}:`, error);
-        }
+      // Validación de cliente: evitar 422 del backend (quantity > 0) con un aviso claro.
+      const invalid = [...added, ...modified].filter(
+        (d) => !(typeof d.quantity === 'number' && d.quantity > 0)
+      );
+      if (invalid.length > 0) {
+        const lines = invalid.map((d) => d.line_number).join(', ');
+        toast.error(`La cantidad debe ser mayor a 0 en la(s) línea(s): ${lines}.`);
+        return;
       }
-    }
 
-    // 4.2. CREAR líneas nuevas
-    for (const addedLine of addedLines) {
-      try {
-        const createdDetail = await createDetail.mutateAsync({
+      // 1) Bajas
+      for (const d of deleted) {
+        const id = lineIdMap.get(d.line_number);
+        if (id) await deleteDetail.mutateAsync({ id, voucherId });
+      }
+      // 2) Altas (el hook envía skip_similarity_search cuando no hay product_id)
+      for (const d of added) {
+        await createDetail.mutateAsync({
           voucher_id: voucherId,
-          line_number: addedLine.line_number,
-          product_id: addedLine.product_id,
-          item_name: addedLine.item_name,
-          item_description: addedLine.item_description,
-          quantity: addedLine.quantity,
-          unit_of_measure: addedLine.unit_of_measure,
-          serial_number: addedLine.serial_number,
-          part_number: addedLine.part_number,
-          category: addedLine.category,
-          notes: addedLine.notes,
+          line_number: d.line_number,
+          product_id: d.product_id,
+          item_name: d.item_name,
+          item_description: d.item_description,
+          quantity: d.quantity,
+          unit_of_measure: d.unit_of_measure,
+          serial_number: d.serial_number,
+          part_number: d.part_number,
+          category: d.category,
+          notes: d.notes,
         });
-
-        // Agregar al map INMEDIATAMENTE
-        const newMap = new Map(lineIdMap);
-        newMap.set(addedLine.line_number, createdDetail.id);
-        setLineIdMap(newMap);
-      } catch (error) {
-        console.error(`Error creating line ${addedLine.line_number}:`, error);
       }
-    }
-
-    // 4.3. ACTUALIZAR líneas modificadas
-    for (const modifiedLine of modifiedLines) {
-      const detailId = lineIdMap.get(modifiedLine.line_number);
-      if (detailId) {
-        try {
-          await updateDetail.mutateAsync({
-            id: detailId,
-            voucherId,
-            data: {
-              item_name: modifiedLine.item_name,
-              item_description: modifiedLine.item_description,
-              quantity: modifiedLine.quantity,
-              unit_of_measure: modifiedLine.unit_of_measure,
-              serial_number: modifiedLine.serial_number,
-              part_number: modifiedLine.part_number,
-              notes: modifiedLine.notes,
-            },
-          });
-        } catch (error) {
-          console.error(`Error updating line ${modifiedLine.line_number}:`, error);
-        }
+      // 3) Modificaciones
+      for (const d of modified) {
+        const id = lineIdMap.get(d.line_number);
+        if (!id) continue;
+        await updateDetail.mutateAsync({
+          id,
+          voucherId,
+          data: {
+            item_name: d.item_name,
+            item_description: d.item_description,
+            quantity: d.quantity,
+            unit_of_measure: d.unit_of_measure,
+            serial_number: d.serial_number,
+            part_number: d.part_number,
+            notes: d.notes,
+          },
+        });
       }
+
+      if (added.length + deleted.length + modified.length === 0) {
+        toast('No hay cambios que guardar');
+      }
+      // El refetch (invalidación de los hooks) re-sincroniza baseline y draft.
+      setIsEditing(false);
+    } finally {
+      setIsSaving(false);
     }
+  };
+
+  // Cancelar edición: descartar cambios locales y volver a consulta.
+  const handleCancelEdit = () => {
+    setDraftDetails(baseline);
+    setIsEditing(false);
   };
 
   if (isLoading) {
@@ -158,40 +163,58 @@ export default function VoucherDetailsManager({ voucherId, canEdit }: VoucherDet
     );
   }
 
-  // OPCIÓN A: Deshabilitar edición si el vale ya tiene líneas existentes
-  // Para evitar conflictos con line_number en el backend
-  const hasExistingLines = backendDetails && backendDetails.length > 0;
-
   return (
     <div className="space-y-4">
-      {/* Mensaje informativo cuando no se puede editar */}
       {!canEdit && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
           <p className="text-sm text-blue-800">
-            Este vale ya no puede ser modificado (estado: {!canEdit ? 'aprobado o en proceso' : 'pendiente'}).
+            Este vale ya no puede modificarse (estado aprobado o en proceso). Se muestran sus
+            líneas en modo consulta.
           </p>
         </div>
       )}
 
-      {/* Advertencia cuando el vale tiene líneas pero está en estado PENDING */}
-      {canEdit && hasExistingLines && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-sm text-amber-800 font-medium mb-2">
-            No es posible agregar o modificar líneas en vales que ya tienen detalles
-          </p>
-          <p className="text-sm text-amber-700">
-            Si necesitas modificar este vale, debes eliminarlo completamente y crear uno nuevo.
-            Esta es una limitación temporal del sistema debido a conflictos con el número de línea en la base de datos.
-          </p>
-        </div>
-      )}
-
-      {/* Editor de detalles - SIEMPRE visible, pero en modo readOnly si no se puede editar */}
-      <VoucherDetailsEditor
+      <VoucherLinesTable
         details={draftDetails}
-        onChange={handleDetailsChange}
-        readOnly={!canEdit || hasExistingLines}
+        onChange={setDraftDetails}
+        disabled={!canEdit || !isEditing}
       />
+
+      {canEdit && !isEditing && (
+        <div className="flex items-center justify-end">
+          <Button type="button" variant="outline" onClick={() => setIsEditing(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Editar líneas
+          </Button>
+        </div>
+      )}
+
+      {canEdit && isEditing && (
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleCancelEdit}
+            disabled={isSaving}
+          >
+            <RotateCcw className="mr-2 h-4 w-4" />
+            Cancelar
+          </Button>
+          <Button type="button" onClick={handleSave} disabled={!isDirty || isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                Guardar cambios
+              </>
+            )}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -24,8 +24,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import VoucherDetailsEditor, { VoucherDetailDraft } from '@/components/vouchers/VoucherDetailsEditor';
+import VoucherLinesTable from '@/components/vouchers/VoucherLinesTable';
+import { VoucherDetailDraft } from '@/lib/types/voucherDetail';
 import { VoucherSuccessModal } from '@/components/vouchers/VoucherSuccessModal';
+import toast from 'react-hot-toast';
 
 const voucherCreateSchema = z.object({
   form_voucher_type: z.enum(['ENTRY', 'EXIT_WITH_RETURN', 'EXIT_WITHOUT_RETURN'] as const),
@@ -135,6 +137,19 @@ export default function VoucherCreateForm() {
     try {
       setIsCreating(true);
 
+      // Validación de cliente: cantidad > 0 (evita 422 del backend con aviso claro)
+      const invalidQty = details.filter(
+        (d) => !(typeof d.quantity === 'number' && d.quantity > 0)
+      );
+      if (invalidQty.length > 0) {
+        toast.error(
+          `La cantidad debe ser mayor a 0 en la(s) línea(s): ` +
+          `${invalidQty.map((d) => d.line_number).join(', ')}.`
+        );
+        setIsCreating(false);
+        return;
+      }
+
       // Convertir form_voucher_type a voucher_type + with_return
       const apiData = {
         ...data,
@@ -158,33 +173,48 @@ export default function VoucherCreateForm() {
       // 1. Crear el voucher
       const createdVoucher = await createVoucher.mutateAsync(apiData);
 
-      // 2. Crear las líneas de detalle si hay alguna
+      // 2. Crear las líneas de detalle (la tabla ya entrega solo filas con artículo)
+      const failedLines: number[] = [];
       if (details.length > 0) {
         for (let i = 0; i < details.length; i++) {
           const detail = details[i];
           try {
-            await voucherDetailService.create({
-              voucher_id: createdVoucher.id,
-              line_number: detail.line_number,
-              product_id: detail.product_id,
-              item_name: detail.item_name,
-              item_description: detail.item_description,
-              quantity: detail.quantity,
-              unit_of_measure: detail.unit_of_measure,
-              serial_number: detail.serial_number,
-              part_number: detail.part_number,
-              category: detail.category,
-              notes: detail.notes,
-            });
+            await voucherDetailService.create(
+              {
+                voucher_id: createdVoucher.id,
+                line_number: detail.line_number,
+                product_id: detail.product_id,
+                item_name: detail.item_name,
+                item_description: detail.item_description,
+                quantity: detail.quantity,
+                unit_of_measure: detail.unit_of_measure,
+                serial_number: detail.serial_number,
+                part_number: detail.part_number,
+                category: detail.category,
+                notes: detail.notes,
+              },
+              // Sin product_id = entrada manual: forzamos la creación/auto-cacheo
+              // para que el backend no devuelva "coincidencias" y la línea se pierda.
+              { skipSimilaritySearch: !detail.product_id }
+            );
 
             // Pequeño delay para evitar problemas de timing
             if (i < details.length - 1) {
               await new Promise(resolve => setTimeout(resolve, 100));
             }
-          } catch (error) {
-            // Continuar con las siguientes líneas incluso si una falla
+          } catch {
+            // Acumular fallo y continuar con las siguientes líneas
+            failedLines.push(detail.line_number);
           }
         }
+      }
+
+      // Avisar si alguna línea no se pudo crear (antes se silenciaba)
+      if (failedLines.length > 0) {
+        toast.error(
+          `El vale se creó, pero ${failedLines.length} línea(s) no se guardaron ` +
+          `(línea ${failedLines.join(', ')}). Revísalas en el detalle del vale.`
+        );
       }
 
       // 3. Mostrar modal de éxito
@@ -446,7 +476,7 @@ export default function VoucherCreateForm() {
       </Card>
 
       {/* Editor de Líneas de Detalle */}
-      <VoucherDetailsEditor details={details} onChange={handleDetailsChange} />
+      <VoucherLinesTable details={details} onChange={handleDetailsChange} />
 
       {/* Botones de Acción */}
       <div className="flex gap-4 justify-end">

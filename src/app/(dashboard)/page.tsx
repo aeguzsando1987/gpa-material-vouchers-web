@@ -48,12 +48,8 @@ export default function HomePage() {
       {/* Info Card */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
         <h3 className="text-lg font-semibold text-blue-900 mb-2">
-          Sistema MVP en Desarrollo
+          Sistema en etapa de prueba
         </h3>
-        <p className="text-sm text-blue-700">
-          Este es un prototipo funcional del sistema de gestión de vales. Utiliza
-          el menú lateral para navegar entre los módulos disponibles según tu rol.
-        </p>
       </div>
     </div>
   );
