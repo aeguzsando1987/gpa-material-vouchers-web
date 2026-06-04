@@ -485,10 +485,15 @@ export default function VoucherCreateForm() {
           variant="outline"
           onClick={() => router.push('/my-vouchers')}
           disabled={isCreating}
+          className="transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
         >
           Cancelar
         </Button>
-        <Button type="submit" disabled={isCreating}>
+        <Button
+          type="submit"
+          disabled={isCreating}
+          className="transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
+        >
           {isCreating ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

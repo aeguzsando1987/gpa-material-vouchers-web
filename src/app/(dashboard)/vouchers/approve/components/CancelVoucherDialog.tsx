@@ -64,20 +64,20 @@ export default function CancelVoucherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white dark:bg-gray-800 sm:max-w-[525px]">
+      <DialogContent className="bg-white sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-red-600 dark:text-red-500 text-xl font-semibold">
+          <DialogTitle className="flex items-center gap-2 text-red-600 text-xl font-semibold">
             <AlertCircle className="h-5 w-5" />
             Rechazar Vale
           </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
+          <DialogDescription className="text-neutral-600">
             Esta acción cancelará el vale de forma permanente. Debes proporcionar una razón válida.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div>
-            <Label htmlFor="cancellation_reason" className="text-gray-700 dark:text-gray-300">
+            <Label htmlFor="cancellation_reason" className="text-neutral-700">
               Razón de Rechazo <span className="text-red-600">*</span>
             </Label>
             <Textarea
@@ -89,7 +89,7 @@ export default function CancelVoucherDialog({
               className={`resize-none ${errors.cancellation_reason ? 'border-red-500 focus:ring-red-500' : ''}`}
             />
             {errors.cancellation_reason && (
-              <p className="text-sm text-red-600 dark:text-red-500 mt-1">
+              <p className="text-sm text-red-600 mt-1">
                 {errors.cancellation_reason.message}
               </p>
             )}
@@ -104,7 +104,7 @@ export default function CancelVoucherDialog({
                 onOpenChange(false);
               }}
               disabled={isPending}
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+              className="cursor-pointer hover:bg-neutral-100 text-neutral-700"
             >
               Cancelar
             </Button>

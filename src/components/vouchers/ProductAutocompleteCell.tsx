@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Package, TrendingUp, Loader2 } from 'lucide-react';
+import { Package, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { useProductSearch, useTopProducts } from '@/hooks/useProducts';
-import { Product, ProductSearchResult } from '@/lib/types/product';
+import { useProductSearch } from '@/hooks/useProducts';
+import { ProductSearchResult } from '@/lib/types/product';
 
 interface ProductAutocompleteCellProps {
   /** Valor actual del nombre del artículo (item_name). */
@@ -44,27 +44,13 @@ export default function ProductAutocompleteCell({
     return () => clearTimeout(timer);
   }, [value]);
 
-  const { data: searchResults, isLoading: isSearching } = useProductSearch(
+  const { data: searchResults, isLoading } = useProductSearch(
     debouncedSearch,
     10,
     debouncedSearch.length >= 2
   );
-  const { data: topProducts, isLoading: isLoadingTop } = useTopProducts(10);
 
-  const showingSearch = debouncedSearch.length >= 2;
-  // Normalizamos topProducts (Product[]) al shape de búsqueda para un único render/select.
-  const topAsResults: ProductSearchResult[] = (topProducts ?? []).map((p: Product) => ({
-    id: p.id,
-    name: p.name,
-    code: p.code,
-    part_number: p.part_number,
-    description: p.description,
-    category: p.category,
-    unit_of_measure: p.unit_of_measure,
-    usage_count: p.usage_count,
-  }));
-  const results = showingSearch ? searchResults ?? [] : topAsResults;
-  const isLoading = showingSearch ? isSearching : isLoadingTop;
+  const results = searchResults ?? [];
 
   // Cerrar el desplegable al hacer click fuera de la celda
   useEffect(() => {
@@ -98,9 +84,9 @@ export default function ProductAutocompleteCell({
         placeholder={placeholder}
         onChange={(e) => {
           onChange(e.target.value);
-          setOpen(true);
+          setOpen(e.target.value.length >= 2);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => { if (value.length >= 2) setOpen(true); }}
         className="min-w-[180px] h-9"
         autoComplete="off"
       />
@@ -111,17 +97,8 @@ export default function ProductAutocompleteCell({
           className="absolute z-50 left-0 top-full mt-1 w-[280px] max-h-64 overflow-y-auto rounded-md border-2 border-gray-300 bg-white shadow-lg"
         >
           <div className="sticky top-0 flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-3 py-1.5 text-xs text-muted-foreground">
-            {showingSearch ? (
-              <>
-                <Package className="h-3.5 w-3.5" />
-                <span>{isLoading ? 'Buscando...' : `${results.length} coincidencias`}</span>
-              </>
-            ) : (
-              <>
-                <TrendingUp className="h-3.5 w-3.5" />
-                <span>Productos más usados</span>
-              </>
-            )}
+            <Package className="h-3.5 w-3.5" />
+            <span>{isLoading ? 'Buscando...' : `${results.length} coincidencias`}</span>
           </div>
 
           {isLoading && (
@@ -160,9 +137,7 @@ export default function ProductAutocompleteCell({
 
           {!isLoading && results.length === 0 && (
             <div className="px-3 py-4 text-center text-xs text-gray-500">
-              {showingSearch
-                ? 'Sin coincidencias. Se guardará como entrada manual.'
-                : 'No hay productos en el catálogo.'}
+              Sin coincidencias. Se guardará como entrada manual.
             </div>
           )}
         </div>

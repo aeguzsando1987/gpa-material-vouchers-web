@@ -16,7 +16,7 @@ export default function LoginPage() {
           <div className="text-center space-y-3">
             <div className="flex justify-center">
               <Image
-                src="/logo GPA.png"
+                src="/logo-gpa.png"
                 alt="Logo GPA"
                 width={160}
                 height={80}

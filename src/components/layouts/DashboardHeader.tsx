@@ -46,7 +46,7 @@ export default function DashboardHeader() {
   if (!user) return null;
 
   return (
-    <header className="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-4 md:px-6">
+    <header className="sticky top-0 z-10 h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-4 md:px-6">
       {/* Left: Hamburger (móvil) + Título (escritorio) */}
       <div className="flex items-center gap-3">
         {/* Menú hamburguesa - solo visible en móvil */}
@@ -95,7 +95,7 @@ export default function DashboardHeader() {
           variant="outline"
           size="sm"
           onClick={handleLogout}
-          className="hidden md:flex items-center gap-2"
+          className="hidden md:flex items-center gap-2 transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer"
         >
           <LogOut className="h-4 w-4" />
           Cerrar Sesión

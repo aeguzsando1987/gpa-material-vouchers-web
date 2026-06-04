@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
@@ -109,15 +110,25 @@ export default function DashboardSidebar() {
   if (!user) return null;
 
   return (
-    <aside className="hidden md:flex w-64 bg-white border-r border-neutral-200 min-h-screen flex-col">
+    <aside className="hidden md:flex fixed top-0 left-0 h-screen w-64 bg-white border-r border-neutral-200 flex-col z-20">
       {/* Logo/Brand */}
-      <div className="p-6 border-b border-neutral-200">
-        <h1 className="text-2xl font-bold text-neutral-900">Sistema de Vales de entrada y salida de material GPA</h1>
-        <p className="text-xs text-neutral-500 mt-1">Gestión de Material</p>
+      <div className="p-4 border-b border-neutral-200 flex items-center gap-3">
+        <Image
+          src="/logo-gpa.png"
+          alt="Logo GPA"
+          width={48}
+          height={48}
+          className="object-contain flex-shrink-0"
+          priority
+        />
+        <div>
+          <h1 className="text-sm font-bold text-neutral-900 leading-tight">Sistema de Vales</h1>
+          <p className="text-xs text-neutral-500">Gestión de Material</p>
+        </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-4 space-y-1">
+      <nav className="flex-1 overflow-y-auto p-4 space-y-1">
         {visibleItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
