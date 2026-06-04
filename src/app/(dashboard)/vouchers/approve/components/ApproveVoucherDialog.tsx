@@ -61,10 +61,10 @@ export default function ApproveVoucherDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-white dark:bg-gray-800 sm:max-w-[525px]">
+      <DialogContent className="bg-white sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">Aprobar Vale</DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-400">
+          <DialogTitle className="text-xl font-semibold text-neutral-900">Aprobar Vale</DialogTitle>
+          <DialogDescription className="text-neutral-600">
             ¿Estás seguro de que deseas aprobar este vale? Esta acción no se puede deshacer.
           </DialogDescription>
         </DialogHeader>
@@ -88,7 +88,7 @@ export default function ApproveVoucherDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isPending}
-              className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="cursor-pointer hover:bg-neutral-100 text-neutral-700"
             >
               Cancelar
             </Button>

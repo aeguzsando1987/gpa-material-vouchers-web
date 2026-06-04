@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import LoginForm from '@/components/forms/LoginForm';
 
 export const metadata = {
@@ -12,7 +13,17 @@ export default function LoginPage() {
         {/* Card Container */}
         <div className="bg-white rounded-lg shadow-lg p-8 space-y-6">
           {/* Header */}
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3">
+            <div className="flex justify-center">
+              <Image
+                src="/logo-gpa.png"
+                alt="Logo GPA"
+                width={160}
+                height={80}
+                className="object-contain"
+                priority
+              />
+            </div>
             <h1 className="text-3xl font-bold text-neutral-900">
               Sistema de Vales
             </h1>
@@ -27,8 +38,8 @@ export default function LoginPage() {
           {/* Footer */}
           <div className="pt-4 border-t border-neutral-200">
             <p className="text-xs text-center text-neutral-400">
-              Si olvido su contraseña favor de comunicarse al correo <strong>alonso.guzman@gpamex.com</strong>
-              <br />
+              Si olvidó su contraseña, por favor comuníquese con el área de TI{' '}
+              (<strong>sistemas@gpamex.com</strong>)
             </p>
           </div>
         </div>

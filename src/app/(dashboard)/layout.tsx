@@ -41,8 +41,8 @@ export default function DashboardLayout({
       {/* Sidebar */}
       <DashboardSidebar />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Content Area — desplazada para no quedar bajo el sidebar fijo */}
+      <div className="flex-1 flex flex-col md:pl-64">
         {/* Header */}
         <DashboardHeader />
 

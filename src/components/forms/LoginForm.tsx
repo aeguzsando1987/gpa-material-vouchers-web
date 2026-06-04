@@ -113,7 +113,7 @@ export default function LoginForm() {
       </div>
 
       {/* Submit Button */}
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" className="w-full transition-colors hover:bg-primary/90 hover:shadow-md" disabled={isLoading}>
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

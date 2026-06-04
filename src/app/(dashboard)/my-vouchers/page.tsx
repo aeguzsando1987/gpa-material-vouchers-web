@@ -26,14 +26,14 @@ import { Badge } from '@/components/ui/badge';
 import type { VoucherStatus, VoucherType } from '@/lib/types/voucher';
 
 // Mapeo de estados a colores y textos en español
-const STATUS_CONFIG: Record<VoucherStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-  PENDING: { label: 'Pendiente', variant: 'secondary' },
-  APPROVED: { label: 'Aprobado', variant: 'default' },
-  IN_TRANSIT: { label: 'En Tránsito', variant: 'outline' },
-  OVERDUE: { label: 'Vencido', variant: 'destructive' },
-  INCOMPLETE_DAMAGED: { label: 'Incompleto/Dañado', variant: 'destructive' }, // NUEVO
-  CLOSED: { label: 'Cerrado', variant: 'outline' },
-  CANCELLED: { label: 'Cancelado', variant: 'destructive' },
+const STATUS_CONFIG: Record<VoucherStatus, { label: string; className: string }> = {
+  PENDING:             { label: 'Pendiente',         className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  APPROVED:            { label: 'Aprobado',           className: 'bg-blue-100 text-blue-800 border-blue-300' },
+  IN_TRANSIT:          { label: 'En Tránsito',        className: 'bg-purple-100 text-purple-800 border-purple-300' },
+  OVERDUE:             { label: 'Vencido',            className: 'bg-orange-100 text-orange-800 border-orange-300' },
+  INCOMPLETE_DAMAGED:  { label: 'Incompleto/Dañado',  className: 'bg-red-100 text-red-800 border-red-300' },
+  CLOSED:              { label: 'Cerrado',            className: 'bg-green-100 text-green-800 border-green-300' },
+  CANCELLED:           { label: 'Cancelado',          className: 'bg-neutral-100 text-neutral-600 border-neutral-300' },
 };
 
 const TYPE_CONFIG: Record<VoucherType, { label: string; icon: typeof FileText }> = {
@@ -101,7 +101,7 @@ export default function MyVouchersPage() {
           </p>
         </div>
         <Link href="/my-vouchers/create">
-          <Button>
+          <Button className="transition-all duration-200 hover:scale-105 hover:shadow-md cursor-pointer">
             <Plus className="mr-2 h-4 w-4" />
             Nuevo Vale
           </Button>
@@ -373,7 +373,7 @@ export default function MyVouchersPage() {
                       Empresa ID: {voucher.company_id}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={STATUS_CONFIG[voucher.status].variant}>
+                      <Badge variant="outline" className={STATUS_CONFIG[voucher.status].className}>
                         {STATUS_CONFIG[voucher.status].label}
                       </Badge>
                     </TableCell>

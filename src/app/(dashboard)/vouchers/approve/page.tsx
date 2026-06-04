@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useVouchers } from '@/hooks/useVouchers';
+import { useIndividuals } from '@/hooks/useIndividuals';
 import type { VoucherFilters } from '@/lib/types/voucher';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,6 +26,12 @@ export default function ApproveVouchersPage() {
   const [selectedVoucherId, setSelectedVoucherId] = useState<number | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const { data: individuals } = useIndividuals(0, 200);
+  // Mapa id → nombre completo para resolver delivered_by_id sin llamadas extra
+  const individualNames = new Map(
+    (individuals ?? []).map((i) => [i.id, `${i.name} ${i.last_name}`.trim()])
+  );
 
   const { data: response, isLoading, error } = useVouchers({
     page: filters.page,
@@ -149,7 +156,7 @@ export default function ApproveVouchersPage() {
                           </Link>
                         </TableCell>
                         <TableCell className="text-sm">
-                          Usuario ID: {voucher.delivered_by_id}
+                          {individualNames.get(voucher.delivered_by_id) ?? `Usuario #${voucher.delivered_by_id}`}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline">{tipoSalida}</Badge>
@@ -162,13 +169,16 @@ export default function ApproveVouchersPage() {
                         </TableCell>
                         <TableCell>
                           <Badge
-                            variant={
+                            className={
                               voucher.status === 'PENDING'
-                                ? 'secondary'
+                                ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
                                 : voucher.status === 'APPROVED'
-                                ? 'default'
-                                : 'destructive'
+                                ? 'bg-blue-100 text-blue-800 border-blue-300'
+                                : voucher.status === 'CLOSED'
+                                ? 'bg-green-100 text-green-800 border-green-300'
+                                : 'bg-red-100 text-red-800 border-red-300'
                             }
+                            variant="outline"
                           >
                             {voucher.status}
                           </Badge>

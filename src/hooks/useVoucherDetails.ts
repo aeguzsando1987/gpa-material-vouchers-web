@@ -5,6 +5,7 @@ import {
   VoucherDetailUpdateInput,
 } from '@/lib/types/voucherDetail';
 import toast from 'react-hot-toast';
+import { getApiErrorMessage } from '@/lib/utils/apiError';
 
 // Query keys
 export const voucherDetailKeys = {
@@ -46,18 +47,19 @@ export function useCreateVoucherDetail() {
   const queryClient = useQueryClient();
 
   return useMutation({
+    // Regla: si la línea no trae product_id (entrada manual), saltamos la
+    // búsqueda por similitud para que el backend cree/auto-cachee la línea
+    // directamente en vez de devolver ProductMatchesFound.
     mutationFn: (data: VoucherDetailCreateInput) =>
-      voucherDetailService.create(data),
+      voucherDetailService.create(data, { skipSimilaritySearch: !data.product_id }),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({
         queryKey: voucherDetailKeys.byVoucher(variables.voucher_id),
       });
       toast.success('Línea de detalle creada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(
-        error.response?.data?.detail || 'Error al crear línea de detalle'
-      );
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al crear línea de detalle'));
     },
   });
 }
@@ -87,10 +89,8 @@ export function useUpdateVoucherDetail() {
       });
       toast.success('Línea de detalle actualizada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(
-        error.response?.data?.detail || 'Error al actualizar línea de detalle'
-      );
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al actualizar línea de detalle'));
     },
   });
 }
@@ -110,10 +110,8 @@ export function useDeleteVoucherDetail() {
       });
       toast.success('Línea de detalle eliminada exitosamente');
     },
-    onError: (error: any) => {
-      toast.error(
-        error.response?.data?.detail || 'Error al eliminar línea de detalle'
-      );
+    onError: (error: unknown) => {
+      toast.error(getApiErrorMessage(error, 'Error al eliminar línea de detalle'));
     },
   });
 }
