@@ -60,13 +60,13 @@ const menuItems: MenuItem[] = [
     label: 'Check de Salida',
     href: '/vouchers/validate-exit',
     icon: ClipboardCheck,
-    roles: [1, 2, 3, 6], // Admin, Manager, Supervisor, Checker
+    roles: [1, 6], // Admin, Vigilante
   },
   {
     label: 'Confirmar Entradas',
     href: '/vouchers/confirm-entry',
     icon: PackageCheck,
-    roles: [1, 2, 3, 6], // Admin, Manager, Supervisor, Checker
+    roles: [1, 6], // Admin, Vigilante
   },
 
   // Administración del sistema

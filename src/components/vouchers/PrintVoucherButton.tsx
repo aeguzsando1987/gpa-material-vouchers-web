@@ -11,6 +11,10 @@ interface PrintVoucherButtonProps {
   size?: 'default' | 'sm' | 'lg' | 'icon';
   showLabel?: boolean;
   className?: string;
+  /** Bloquea el botón desde el exterior (p.ej. mientras el vale no está aprobado) */
+  disabled?: boolean;
+  /** Texto del tooltip nativo, útil para explicar por qué está bloqueado */
+  title?: string;
 }
 
 /**
@@ -24,6 +28,8 @@ export const PrintVoucherButton = ({
   size = 'default',
   showLabel = true,
   className = '',
+  disabled = false,
+  title,
 }: PrintVoucherButtonProps) => {
   const { generateAndDownload, isGenerating, progress } = useGeneratePDF();
 
@@ -34,7 +40,8 @@ export const PrintVoucherButton = ({
   return (
     <Button
       onClick={handlePrint}
-      disabled={isGenerating}
+      disabled={isGenerating || disabled}
+      title={title}
       variant={variant}
       size={size}
       className={className}

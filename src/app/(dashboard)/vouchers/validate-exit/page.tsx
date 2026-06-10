@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
+import { canCheckExits } from '@/lib/types/auth';
 import { useValidateExit } from '@/hooks/useValidateExit';
 import { voucherService } from '@/lib/api/services/voucherService';
 import { toast } from 'sonner';
@@ -18,6 +20,7 @@ import ValidateExitDialog, {
 } from './components/ValidateExitDialog';
 
 export default function ValidateExitPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [selectedVoucherId, setSelectedVoucherId] = useState<number | null>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<VoucherWithDetails | null>(null);
@@ -26,6 +29,15 @@ export default function ValidateExitPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const validateMutation = useValidateExit();
+
+  // Guard de rol: solo Admin y Vigilante pueden acceder a esta pantalla.
+  // Bloquea el acceso por URL directa (el menú ya oculta el link).
+  useEffect(() => {
+    if (user && !canCheckExits(user.role)) {
+      toast.error('No tienes permiso para acceder a Check de Salida');
+      router.replace('/my-vouchers');
+    }
+  }, [user, router]);
 
   // Obtener Individual ID del usuario actual
   const currentUserIndividualId = user?.individual_id;
@@ -107,6 +119,11 @@ export default function ValidateExitPage() {
       }
     );
   };
+
+  // No renderizar el contenido si el rol no está autorizado (se está redirigiendo)
+  if (user && !canCheckExits(user.role)) {
+    return null;
+  }
 
   return (
     <div className="space-y-6">

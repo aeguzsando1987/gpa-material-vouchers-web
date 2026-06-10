@@ -27,7 +27,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useApproveVoucher, useApproveIOVoucher, useCancelVoucher } from '@/hooks/useVouchers';
 import { useAuthStore } from '@/lib/store/authStore';
 import { canApproveVouchers, isIOManager } from '@/lib/types/auth';
-import { Voucher } from '@/lib/types/voucher';
+import { Voucher, isVoucherPrintable } from '@/lib/types/voucher';
 import { PrintVoucherButton } from './PrintVoucherButton';
 
 interface VoucherActionsProps {
@@ -54,6 +54,9 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
   const isPending = voucher.status === 'PENDING';
   const isPendingIO = voucher.status === 'PENDING_IO_APPROVAL';
   const isApproved = voucher.status === 'APPROVED';
+
+  // Imprimir: solo cuando el vale ya pasó la doble aprobación (jefe directo + contraloría)
+  const canPrint = isVoucherPrintable(voucher.status);
 
   // Botón APROBAR (1ª aprobación): solo si status=PENDING y usuario tiene permisos
   const showApproveButton = isPending && userCanApprove;
@@ -128,12 +131,19 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
   return (
     <>
       <div className="flex flex-wrap gap-3">
-        {/* Botón de Imprimir - SIEMPRE visible */}
+        {/* Botón de Imprimir - bloqueado hasta que el vale esté aprobado
+            (1ª aprobación jefe directo + 2ª aprobación contraloría) */}
         <PrintVoucherButton
           voucherId={voucher.id}
           voucherFolio={voucher.folio}
           variant="outline"
           showLabel={true}
+          disabled={!canPrint}
+          title={
+            canPrint
+              ? undefined
+              : 'Disponible una vez que el vale esté aprobado (jefe directo y contraloría)'
+          }
         />
 
         {showApproveButton && (

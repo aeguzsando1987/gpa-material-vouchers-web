@@ -162,6 +162,19 @@ export const getVoucherStatusName = (status: VoucherStatus): string => {
   return VOUCHER_STATUS_NAMES[status] || status;
 };
 
+// Estados en los que el vale ya pasó la doble aprobación (jefe directo + contraloría)
+// y por tanto puede imprimirse. Se excluyen PENDING, PENDING_IO_APPROVAL y CANCELLED.
+export const PRINTABLE_VOUCHER_STATUSES: VoucherStatus[] = [
+  'APPROVED',
+  'IN_TRANSIT',
+  'OVERDUE',
+  'CLOSED',
+  'INCOMPLETE_DAMAGED',
+];
+
+export const isVoucherPrintable = (status: VoucherStatus): boolean =>
+  PRINTABLE_VOUCHER_STATUSES.includes(status);
+
 // ==================== LINE-BY-LINE VALIDATION TYPES ====================
 
 export interface LineValidation {

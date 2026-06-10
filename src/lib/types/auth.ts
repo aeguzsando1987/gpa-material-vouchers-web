@@ -49,5 +49,6 @@ export const canAccessAdminUsers = (role: number) => [1, 2].includes(role);
 export const canApproveVouchers = (role: number) => [1, 2, 3].includes(role);
 // La 2ª aprobación (contraloría) NO depende del rol, sino de ser contralor (io manager).
 export const isIOManager = (user?: { is_io_manager?: boolean } | null) => !!user?.is_io_manager;
-export const canCheckExits = (role: number) => [1, 2, 3, 6].includes(role);
+// Check de Salida y Confirmar Entradas: solo Admin (1) y Vigilante (6)
+export const canCheckExits = (role: number) => [1, 6].includes(role);
 export const canManageMisc = (role: number) => [1, 2, 3].includes(role);

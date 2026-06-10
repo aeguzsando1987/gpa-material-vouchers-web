@@ -8,9 +8,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, Printer, Eye, Plus, Loader2 } from 'lucide-react';
+import { CheckCircle2, Eye, Plus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useGeneratePDF } from '@/hooks/useGeneratePDF';
 
 interface VoucherSuccessModalProps {
   isOpen: boolean;
@@ -21,7 +20,12 @@ interface VoucherSuccessModalProps {
 
 /**
  * Modal que aparece después de crear un vale exitosamente
- * Ofrece 3 opciones: Imprimir, Ver Vale Completo, Crear Otro Vale
+ * Ofrece 2 opciones: Ver Vale Completo, Crear Otro Vale
+ *
+ * NOTA: La impresión NO se ofrece aquí porque un vale recién creado está en
+ * estado PENDING. El vale solo puede imprimirse una vez que pasó la doble
+ * aprobación (jefe directo + contraloría); ese botón vive en la página de
+ * detalle del vale (VoucherActions).
  */
 export const VoucherSuccessModal = ({
   isOpen,
@@ -30,16 +34,6 @@ export const VoucherSuccessModal = ({
   voucherFolio,
 }: VoucherSuccessModalProps) => {
   const router = useRouter();
-  const { generateAndDownload, isGenerating, progress } = useGeneratePDF();
-
-  const handlePrint = async () => {
-    const success = await generateAndDownload(voucherId, voucherFolio);
-    // No cerrar modal automáticamente, dejar que usuario decida
-    if (success) {
-      // Opcionalmente, podrías cerrar el modal aquí si lo prefieres
-      // onClose();
-    }
-  };
 
   const handleViewVoucher = () => {
     router.push(`/my-vouchers/${voucherId}`);
@@ -79,56 +73,29 @@ export const VoucherSuccessModal = ({
             ha sido creado correctamente.
             <br />
             <span className="text-sm text-gray-600 mt-1 block">
-              Puedes imprimirlo ahora o verlo más tarde.
+              Podrás imprimirlo desde el detalle del vale una vez que esté
+              aprobado (jefe directo y contraloría).
             </span>
-            {isGenerating && (
-              <span className="block mt-3 text-sm text-blue-600 font-medium">
-                {progress}
-              </span>
-            )}
           </DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-col gap-3 mt-4">
-          {/* Botón principal: Imprimir Vale */}
-          <Button
-            onClick={handlePrint}
-            disabled={isGenerating}
-            className="w-full"
-            size="lg"
-          >
-            {isGenerating ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Generando PDF...
-              </>
-            ) : (
-              <>
-                <Printer className="mr-2 h-5 w-5" />
-                Imprimir Vale
-              </>
-            )}
-          </Button>
-
-          {/* Botón secundario: Ver Vale Completo */}
+          {/* Botón principal: Ver Vale Completo */}
           <Button
             onClick={handleViewVoucher}
-            variant="outline"
             className="w-full"
             size="lg"
-            disabled={isGenerating}
           >
             <Eye className="mr-2 h-5 w-5" />
             Ver Vale Completo
           </Button>
 
-          {/* Botón terciario: Crear Otro Vale */}
+          {/* Botón secundario: Crear Otro Vale */}
           <Button
             onClick={handleCreateAnother}
-            variant="ghost"
+            variant="outline"
             className="w-full"
             size="lg"
-            disabled={isGenerating}
           >
             <Plus className="mr-2 h-5 w-5" />
             Crear Otro Vale

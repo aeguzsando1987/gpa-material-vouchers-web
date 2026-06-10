@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import LoginForm from '@/components/forms/LoginForm';
+import { CurrentYear } from '@/components/CurrentYear';
 
 export const metadata = {
   title: 'Login - Sistema de Vales',
@@ -46,7 +47,7 @@ export default function LoginPage() {
 
         {/* Additional Info */}
         <p className="mt-6 text-center text-xs text-neutral-400">
-          © 2025 Sistema de Vales de salida y entrada de material GPA. Todos los derechos reservados.
+          © <CurrentYear /> Sistema de Vales de salida y entrada de material GPA. Todos los derechos reservados.
         </p>
       </div>
     </div>

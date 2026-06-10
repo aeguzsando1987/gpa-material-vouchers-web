@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
+import { canCheckExits } from '@/lib/types/auth';
 import { useConfirmEntry } from '@/hooks/useConfirmEntry';
 import { voucherService } from '@/lib/api/services/voucherService';
 import { individualService } from '@/lib/api/services/individualService';
@@ -19,6 +21,7 @@ import ConfirmEntryDialog, {
 } from './components/ConfirmEntryDialog';
 
 export default function ConfirmEntryPage() {
+  const router = useRouter();
   const { user } = useAuthStore();
   const [selectedVoucherId, setSelectedVoucherId] = useState<number | null>(null);
   const [selectedVoucher, setSelectedVoucher] = useState<VoucherWithDetails | null>(null);
@@ -27,6 +30,15 @@ export default function ConfirmEntryPage() {
   const [currentUserIndividualId, setCurrentUserIndividualId] = useState<number | null>(null);
 
   const confirmMutation = useConfirmEntry();
+
+  // Guard de rol: solo Admin y Vigilante pueden acceder a esta pantalla.
+  // Bloquea el acceso por URL directa (el menú ya oculta el link).
+  useEffect(() => {
+    if (user && !canCheckExits(user.role)) {
+      toast.error('No tienes permiso para acceder a Confirmar Entradas');
+      router.replace('/my-vouchers');
+    }
+  }, [user, router]);
 
   // Obtener Individual ID del usuario actual
   useEffect(() => {
@@ -115,6 +127,11 @@ export default function ConfirmEntryPage() {
       }
     );
   };
+
+  // No renderizar el contenido si el rol no está autorizado (se está redirigiendo)
+  if (user && !canCheckExits(user.role)) {
+    return null;
+  }
 
   return (
     <div className="container mx-auto py-6 space-y-6">
