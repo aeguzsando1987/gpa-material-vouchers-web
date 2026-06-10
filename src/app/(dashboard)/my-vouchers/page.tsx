@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Plus, FileText, Clock, CheckCircle2, XCircle, Loader2, ArrowUpDown, ArrowUp, ArrowDown, Truck, AlertTriangle, AlertCircle, Ban, Search } from 'lucide-react';
 import { useVouchers } from '@/hooks/useVouchers';
+import { useCompanies } from '@/hooks/useCompanies';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -84,6 +85,17 @@ export default function MyVouchersPage() {
   });
 
   const vouchers = vouchersResponse?.vouchers || [];
+
+  // Mapa id -> nombre de empresa para mostrar el nombre en la tabla
+  // (la lista de vales solo trae company_id)
+  const { data: companiesResponse } = useCompanies(1, 100, true);
+  const companyNameById = useMemo(() => {
+    const map = new Map<number, string>();
+    (companiesResponse?.data ?? []).forEach((company) => {
+      map.set(company.id, company.company_name);
+    });
+    return map;
+  }, [companiesResponse]);
 
   // Filtrar por búsqueda de folio (cliente-side)
   const filteredVouchers = vouchers.filter((voucher) => {
@@ -371,7 +383,7 @@ export default function MyVouchersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">
-                      Empresa ID: {voucher.company_id}
+                      {companyNameById.get(voucher.company_id) ?? `Empresa ID: ${voucher.company_id}`}
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className={STATUS_CONFIG[voucher.status].className}>
