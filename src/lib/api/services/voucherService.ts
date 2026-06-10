@@ -102,6 +102,18 @@ export const voucherService = {
   },
 
   /**
+   * Segunda aprobación (contraloría) de un voucher
+   * Endpoint: POST /vouchers/{voucher_id}/approve-io
+   */
+  approveIO: async (id: number, data?: VoucherApprove): Promise<Voucher> => {
+    const response = await apiClient.post<Voucher>(
+      `/vouchers/${id}/approve-io`,
+      data || {}
+    );
+    return response.data;
+  },
+
+  /**
    * Cancelar un voucher
    * Endpoint: POST /vouchers/{voucher_id}/cancel
    */

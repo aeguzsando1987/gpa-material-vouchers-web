@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useVouchers } from '@/hooks/useVouchers';
 import { useIndividuals } from '@/hooks/useIndividuals';
+import { useAuthStore } from '@/lib/store/authStore';
+import { isIOManager } from '@/lib/types/auth';
+import { VOUCHER_STATUS_NAMES } from '@/lib/types/voucher';
 import type { VoucherFilters } from '@/lib/types/voucher';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -25,7 +28,11 @@ export default function ApproveVouchersPage() {
 
   const [selectedVoucherId, setSelectedVoucherId] = useState<number | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showApproveIODialog, setShowApproveIODialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+
+  const { user } = useAuthStore();
+  const userIsIOManager = isIOManager(user);
 
   const { data: individuals } = useIndividuals(0, 200);
   // Mapa id → nombre completo para resolver delivered_by_id sin llamadas extra
@@ -69,6 +76,11 @@ export default function ApproveVouchersPage() {
   const handleApproveClick = (voucherId: number) => {
     setSelectedVoucherId(voucherId);
     setShowApproveDialog(true);
+  };
+
+  const handleApproveIOClick = (voucherId: number) => {
+    setSelectedVoucherId(voucherId);
+    setShowApproveIODialog(true);
   };
 
   const handleCancelClick = (voucherId: number) => {
@@ -172,6 +184,8 @@ export default function ApproveVouchersPage() {
                             className={
                               voucher.status === 'PENDING'
                                 ? 'bg-yellow-100 text-yellow-800 border-yellow-300'
+                                : voucher.status === 'PENDING_IO_APPROVAL'
+                                ? 'bg-indigo-100 text-indigo-800 border-indigo-300'
                                 : voucher.status === 'APPROVED'
                                 ? 'bg-blue-100 text-blue-800 border-blue-300'
                                 : voucher.status === 'CLOSED'
@@ -180,7 +194,7 @@ export default function ApproveVouchersPage() {
                             }
                             variant="outline"
                           >
-                            {voucher.status}
+                            {VOUCHER_STATUS_NAMES[voucher.status] ?? voucher.status}
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right space-x-2">
@@ -205,6 +219,17 @@ export default function ApproveVouchersPage() {
                                 Rechazar
                               </Button>
                             </>
+                          )}
+                          {voucher.status === 'PENDING_IO_APPROVAL' && userIsIOManager && (
+                            <Button
+                              size="sm"
+                              variant="default"
+                              onClick={() => handleApproveIOClick(voucher.id)}
+                              className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                            >
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              Aprobación Contraloría
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
@@ -231,6 +256,12 @@ export default function ApproveVouchersPage() {
             voucherId={selectedVoucherId}
             open={showApproveDialog}
             onOpenChange={setShowApproveDialog}
+          />
+          <ApproveVoucherDialog
+            voucherId={selectedVoucherId}
+            open={showApproveIODialog}
+            onOpenChange={setShowApproveIODialog}
+            io
           />
           <CancelVoucherDialog
             voucherId={selectedVoucherId}

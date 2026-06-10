@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -69,17 +69,23 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 
   // Estado para jerarquía organizacional
   const [directSupervisorId, setDirectSupervisorId] = useState<number | undefined>(undefined);
-  const [ioManagerId, setIoManagerId] = useState<number | undefined>(undefined);
 
   const { data: companiesData, isLoading: loadingCompanies } = useCompanies(1, 100, true);
   const { data: allIndividuals = [] } = useIndividuals(0, 200, true);
-  const companies = companiesData?.data || [];
+  const companies = useMemo(() => companiesData?.data ?? [], [companiesData]);
 
-  const companyOptions = Array.isArray(companies)
-    ? companies.map((c: any) => ({ value: c.id, label: c.company_name || c.name || `Empresa ${c.id}` }))
-    : [];
+  const companyOptions = useMemo(
+    () =>
+      Array.isArray(companies)
+        ? companies.map((c: any) => ({ value: c.id, label: c.company_name || c.name || `Empresa ${c.id}` }))
+        : [],
+    [companies]
+  );
 
-  const allowedCompanyOptions = companyOptions.filter((c) => c.value !== companyId);
+  const allowedCompanyOptions = useMemo(
+    () => companyOptions.filter((c) => c.value !== companyId),
+    [companyOptions, companyId]
+  );
 
   const {
     register,
@@ -126,7 +132,6 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 
           // Pre-cargar jerarquía organizacional
           if (ind.direct_supervisor_id) setDirectSupervisorId(ind.direct_supervisor_id);
-          if (ind.io_manager_id) setIoManagerId(ind.io_manager_id);
         }
       } catch (error) {
         // Usuario no tiene Individual asociado, es válido
@@ -191,7 +196,6 @@ export default function UserEditForm({ user }: UserEditFormProps) {
 
           // Jerarquía organizacional
           individualUpdateData.direct_supervisor_id = directSupervisorId ?? null;
-          individualUpdateData.io_manager_id = ioManagerId ?? null;
 
           if (Object.keys(individualUpdateData).length > 0) {
             await individualService.update(individual.id, individualUpdateData);
@@ -500,8 +504,8 @@ export default function UserEditForm({ user }: UserEditFormProps) {
               Jerarquía Organizacional
             </CardTitle>
             <CardDescription>
-              Define quién es el jefe directo y el encargado de entradas/salidas.
-              Estos datos se usan para el envío automático de correos al crear vales.
+              Define quién es el jefe directo. Se usa para la primera aprobación de vales
+              y para el envío automático de correos al crear vales.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -527,32 +531,7 @@ export default function UserEditForm({ user }: UserEditFormProps) {
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  Recibe copia del correo al crear un vale
-                </p>
-              </div>
-
-              {/* Encargado IO */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Encargado de Entradas/Salidas</label>
-                <Select
-                  value={ioManagerId?.toString() ?? ''}
-                  onValueChange={(val) => setIoManagerId(val ? parseInt(val) : undefined)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sin encargado asignado" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {allIndividuals
-                      .filter((ind) => ind.id !== individual?.id)
-                      .map((ind) => (
-                        <SelectItem key={ind.id} value={ind.id.toString()}>
-                          {ind.name} {ind.last_name}
-                        </SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Recibe copia del correo al crear un vale (por defecto: Hocejo)
+                  Aprueba (1er nivel) y recibe copia del correo al crear un vale
                 </p>
               </div>
             </div>

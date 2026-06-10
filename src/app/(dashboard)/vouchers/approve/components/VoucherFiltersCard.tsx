@@ -85,6 +85,7 @@ export default function VoucherFiltersCard({
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="PENDING">Pendiente</SelectItem>
+                <SelectItem value="PENDING_IO_APPROVAL">Pend. Contraloría</SelectItem>
                 <SelectItem value="APPROVED">Aprobado</SelectItem>
                 <SelectItem value="CANCELLED">Cancelado</SelectItem>
               </SelectContent>

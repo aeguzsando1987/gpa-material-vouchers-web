@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, X, Edit, Loader2 } from 'lucide-react';
+import { Check, X, Edit, Loader2, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
@@ -24,9 +24,9 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useApproveVoucher, useCancelVoucher } from '@/hooks/useVouchers';
+import { useApproveVoucher, useApproveIOVoucher, useCancelVoucher } from '@/hooks/useVouchers';
 import { useAuthStore } from '@/lib/store/authStore';
-import { canApproveVouchers } from '@/lib/types/auth';
+import { canApproveVouchers, isIOManager } from '@/lib/types/auth';
 import { Voucher } from '@/lib/types/voucher';
 import { PrintVoucherButton } from './PrintVoucherButton';
 
@@ -38,9 +38,11 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
   const router = useRouter();
   const { user } = useAuthStore();
   const approveVoucher = useApproveVoucher();
+  const approveIOVoucher = useApproveIOVoucher();
   const cancelVoucher = useCancelVoucher();
 
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [showApproveIODialog, setShowApproveIODialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [cancellationReason, setCancellationReason] = useState('');
   const [reasonError, setReasonError] = useState('');
@@ -48,14 +50,20 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
   if (!user) return null;
 
   const userCanApprove = canApproveVouchers(user.role);
+  const userIsIOManager = isIOManager(user);
   const isPending = voucher.status === 'PENDING';
+  const isPendingIO = voucher.status === 'PENDING_IO_APPROVAL';
   const isApproved = voucher.status === 'APPROVED';
 
-  // Botón APROBAR: solo si status=PENDING y usuario tiene permisos
+  // Botón APROBAR (1ª aprobación): solo si status=PENDING y usuario tiene permisos
   const showApproveButton = isPending && userCanApprove;
 
-  // Botón CANCELAR: si status=PENDING o APPROVED y usuario tiene permisos
-  const showCancelButton = (isPending || isApproved) && userCanApprove;
+  // Botón APROBACIÓN CONTRALORÍA (2ª aprobación): solo si status=PENDING_IO_APPROVAL
+  // y el usuario es contralor (io manager)
+  const showApproveIOButton = isPendingIO && userIsIOManager;
+
+  // Botón CANCELAR: si status=PENDING, PENDING_IO_APPROVAL o APPROVED y usuario tiene permisos
+  const showCancelButton = (isPending || isPendingIO || isApproved) && userCanApprove;
 
   // Botón EDITAR: solo si status=PENDING
   const showEditButton = isPending;
@@ -68,6 +76,19 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
     try {
       await approveVoucher.mutateAsync({ id: voucher.id });
       setShowApproveDialog(false);
+    } catch (error) {
+      // Error ya manejado por el hook con toast
+    }
+  };
+
+  const handleApproveIOClick = () => {
+    setShowApproveIODialog(true);
+  };
+
+  const handleApproveIOConfirm = async () => {
+    try {
+      await approveIOVoucher.mutateAsync({ id: voucher.id });
+      setShowApproveIODialog(false);
     } catch (error) {
       // Error ya manejado por el hook con toast
     }
@@ -130,6 +151,21 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
           </Button>
         )}
 
+        {showApproveIOButton && (
+          <Button
+            onClick={handleApproveIOClick}
+            disabled={approveIOVoucher.isPending}
+            className="bg-indigo-600 text-white hover:bg-indigo-800 transition-colors duration-200 dark:bg-indigo-500 dark:hover:bg-indigo-700"
+          >
+            {approveIOVoucher.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <ShieldCheck className="h-4 w-4 mr-2" />
+            )}
+            Aprobación Contraloría
+          </Button>
+        )}
+
         {showCancelButton && (
           <Button
             onClick={handleCancelClick}
@@ -160,10 +196,11 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-gray-900 dark:text-gray-100">¿Aprobar este vale?</AlertDialogTitle>
+            <AlertDialogTitle className="text-gray-900 dark:text-gray-100">¿Aprobar este vale? (1ª aprobación)</AlertDialogTitle>
             <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
-              Al aprobar el vale <strong>{voucher.folio}</strong>, este cambiará a estado{' '}
-              <strong>APROBADO</strong> y estará listo para validación de salida.
+              Al aprobar el vale <strong>{voucher.folio}</strong>, este pasará a{' '}
+              <strong>Pendiente de Contraloría</strong>. Un contralor (io manager) deberá dar la
+              segunda aprobación antes de que el vale quede disponible para validación de salida.
               <br />
               <br />
               Esta acción no se puede deshacer.
@@ -182,6 +219,44 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
               className="bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600"
             >
               {approveVoucher.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Aprobando...
+                </>
+              ) : (
+                'Confirmar Aprobación'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmación para Aprobación de Contraloría (2ª aprobación) */}
+      <AlertDialog open={showApproveIODialog} onOpenChange={setShowApproveIODialog}>
+        <AlertDialogContent className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-gray-900 dark:text-gray-100">¿Aprobar como contraloría? (2ª aprobación)</AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-400">
+              Al dar la aprobación de contraloría al vale <strong>{voucher.folio}</strong>, este
+              cambiará a estado <strong>APROBADO</strong> y quedará listo para validación de salida.
+              <br />
+              <br />
+              Esta acción no se puede deshacer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              disabled={approveIOVoucher.isPending}
+              className="bg-gray-100 text-gray-900 border-gray-300 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:hover:bg-gray-700"
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleApproveIOConfirm}
+              disabled={approveIOVoucher.isPending}
+              className="bg-indigo-600 text-white hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600"
+            >
+              {approveIOVoucher.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Aprobando...

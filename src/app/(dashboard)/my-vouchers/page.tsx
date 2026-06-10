@@ -28,6 +28,7 @@ import type { VoucherStatus, VoucherType } from '@/lib/types/voucher';
 // Mapeo de estados a colores y textos en español
 const STATUS_CONFIG: Record<VoucherStatus, { label: string; className: string }> = {
   PENDING:             { label: 'Pendiente',         className: 'bg-yellow-100 text-yellow-800 border-yellow-300' },
+  PENDING_IO_APPROVAL: { label: 'Pend. Contraloría', className: 'bg-indigo-100 text-indigo-800 border-indigo-300' },
   APPROVED:            { label: 'Aprobado',           className: 'bg-blue-100 text-blue-800 border-blue-300' },
   IN_TRANSIT:          { label: 'En Tránsito',        className: 'bg-purple-100 text-purple-800 border-purple-300' },
   OVERDUE:             { label: 'Vencido',            className: 'bg-orange-100 text-orange-800 border-orange-300' },

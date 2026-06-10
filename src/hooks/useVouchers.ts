@@ -191,6 +191,37 @@ export function useApproveVoucher() {
 }
 
 /**
+ * Hook para la segunda aprobación (contraloría) de un voucher
+ */
+export function useApproveIOVoucher() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data?: VoucherApprove }) =>
+      voucherService.approveIO(id, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: voucherKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: voucherKeys.detail(variables.id) });
+      toast.success('Aprobación de contraloría registrada');
+    },
+    onError: (error: any) => {
+      let message = 'Error en aprobación de contraloría';
+
+      if (error.response?.data?.detail) {
+        const detail = error.response.data.detail;
+        if (Array.isArray(detail)) {
+          message = detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+        } else if (typeof detail === 'string') {
+          message = detail;
+        }
+      }
+
+      toast.error(message);
+    },
+  });
+}
+
+/**
  * Hook para cancelar un voucher
  */
 export function useCancelVoucher() {

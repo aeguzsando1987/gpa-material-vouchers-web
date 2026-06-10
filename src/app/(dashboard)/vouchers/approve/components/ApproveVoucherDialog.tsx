@@ -14,7 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useApproveVoucher } from '@/hooks/useVouchers';
+import { useApproveVoucher, useApproveIOVoucher } from '@/hooks/useVouchers';
 import { Loader2 } from 'lucide-react';
 
 const approveSchema = z.object({
@@ -27,14 +27,19 @@ interface ApproveVoucherDialogProps {
   voucherId: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Si es true, ejecuta la 2ª aprobación (contraloría) en vez de la 1ª. */
+  io?: boolean;
 }
 
 export default function ApproveVoucherDialog({
   voucherId,
   open,
   onOpenChange,
+  io = false,
 }: ApproveVoucherDialogProps) {
-  const { mutate: approve, isPending } = useApproveVoucher();
+  const approveLevel1 = useApproveVoucher();
+  const approveIO = useApproveIOVoucher();
+  const { mutate: approve, isPending } = io ? approveIO : approveLevel1;
   const {
     register,
     handleSubmit,
@@ -63,9 +68,13 @@ export default function ApproveVoucherDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-white sm:max-w-[525px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-neutral-900">Aprobar Vale</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-neutral-900">
+            {io ? 'Aprobación de Contraloría' : 'Aprobar Vale'}
+          </DialogTitle>
           <DialogDescription className="text-neutral-600">
-            ¿Estás seguro de que deseas aprobar este vale? Esta acción no se puede deshacer.
+            {io
+              ? '¿Confirmas la segunda aprobación (contraloría)? El vale quedará APROBADO y listo para validación de salida. Esta acción no se puede deshacer.'
+              : '¿Estás seguro de que deseas aprobar este vale? Pasará a Pendiente de Contraloría. Esta acción no se puede deshacer.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -98,7 +107,7 @@ export default function ApproveVoucherDialog({
               className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white"
             >
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Aprobar Vale
+              {io ? 'Aprobar Contraloría' : 'Aprobar Vale'}
             </Button>
           </DialogFooter>
         </form>

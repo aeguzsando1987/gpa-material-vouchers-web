@@ -9,6 +9,7 @@ export interface User {
   company_id?: number;
   allowed_company_ids?: number[];
   accessible_company_ids?: number[];
+  is_io_manager?: boolean; // ¿es contralor? Habilita la 2ª aprobación (gate real en backend)
   is_active: boolean;
   created_at: string;
 }
@@ -46,5 +47,7 @@ export const ROLE_NAMES: Record<number, string> = {
 // Helper para verificar permisos por rol
 export const canAccessAdminUsers = (role: number) => [1, 2].includes(role);
 export const canApproveVouchers = (role: number) => [1, 2, 3].includes(role);
+// La 2ª aprobación (contraloría) NO depende del rol, sino de ser contralor (io manager).
+export const isIOManager = (user?: { is_io_manager?: boolean } | null) => !!user?.is_io_manager;
 export const canCheckExits = (role: number) => [1, 2, 3, 6].includes(role);
 export const canManageMisc = (role: number) => [1, 2, 3].includes(role);

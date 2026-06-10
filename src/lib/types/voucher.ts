@@ -9,6 +9,7 @@ export type { VoucherDetail } from './voucherDetail';
 export type VoucherType = 'ENTRY' | 'EXIT';
 export type VoucherStatus =
   | 'PENDING'
+  | 'PENDING_IO_APPROVAL' // 1ª aprobación dada, pendiente de contraloría
   | 'APPROVED'
   | 'IN_TRANSIT'
   | 'OVERDUE'
@@ -28,11 +29,14 @@ export interface Voucher {
   outer_destination?: string; // NUEVO
   delivered_by_id: number;
   approved_by_id?: number;
+  io_approved_by_id?: number; // 2ª aprobación (contraloría)
   received_by_id?: number;
   with_return: boolean;
   is_intercompany: boolean;
   estimated_return_date?: string; // ISO date
   actual_return_date?: string; // ISO date
+  first_approved_at?: string; // ISO datetime (1ª aprobación)
+  io_approved_at?: string; // ISO datetime (2ª aprobación)
   notes?: string;
   internal_notes?: string;
   qr_token?: string;
@@ -52,6 +56,7 @@ export interface VoucherWithDetails extends Voucher {
   destination_branch_name?: string;
   delivered_by_name?: string;
   approved_by_name?: string;
+  io_approved_by_name?: string;
   received_by_name?: string;
 }
 
@@ -140,6 +145,7 @@ export const VOUCHER_TYPE_NAMES: Record<VoucherType, string> = {
 
 export const VOUCHER_STATUS_NAMES: Record<VoucherStatus, string> = {
   PENDING: 'Pendiente',
+  PENDING_IO_APPROVAL: 'Pend. Contraloría',
   APPROVED: 'Aprobado',
   IN_TRANSIT: 'En Tránsito',
   OVERDUE: 'Vencido',

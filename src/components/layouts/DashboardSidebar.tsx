@@ -15,6 +15,7 @@ import {
   Package,
   PackageCheck,
   Mail,
+  ShieldCheck,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/store/authStore';
 
@@ -69,6 +70,12 @@ const menuItems: MenuItem[] = [
   },
 
   // Administración del sistema
+  {
+    label: 'Contralores',
+    href: '/admin/io-managers',
+    icon: ShieldCheck,
+    roles: [1], // Solo Admin
+  },
   {
     label: 'Config. Correo',
     href: '/admin/email-config',

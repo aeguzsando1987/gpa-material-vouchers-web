@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Controller } from 'react-hook-form';
 import { Loader2, Building2 } from 'lucide-react';
 
@@ -56,11 +56,10 @@ export default function UserCreateForm() {
 
   // Estado para jerarquía organizacional
   const [directSupervisorId, setDirectSupervisorId] = useState<number | undefined>(undefined);
-  const [ioManagerId, setIoManagerId] = useState<number | undefined>(undefined);
 
   const { data: companiesData, isLoading: loadingCompanies } = useCompanies(1, 100, true);
   const { data: allIndividuals = [] } = useIndividuals(0, 200, true);
-  const companies = companiesData?.data || [];
+  const companies = useMemo(() => companiesData?.data ?? [], [companiesData]);
 
   const {
     register,
@@ -84,10 +83,9 @@ export default function UserCreateForm() {
       const result = await createUser.mutateAsync(payload);
 
       // Si se seleccionó jerarquía, actualizar el individual recién creado
-      if ((directSupervisorId || ioManagerId) && result?.individual?.id) {
+      if (directSupervisorId && result?.individual?.id) {
         await individualService.update(result.individual.id, {
           direct_supervisor_id: directSupervisorId ?? null,
-          io_manager_id: ioManagerId ?? null,
         });
       }
 
@@ -97,11 +95,18 @@ export default function UserCreateForm() {
     }
   };
 
-  const companyOptions = Array.isArray(companies)
-    ? companies.map((c: any) => ({ value: c.id, label: c.company_name || c.name || `Empresa ${c.id}` }))
-    : [];
+  const companyOptions = useMemo(
+    () =>
+      Array.isArray(companies)
+        ? companies.map((c: any) => ({ value: c.id, label: c.company_name || c.name || `Empresa ${c.id}` }))
+        : [],
+    [companies]
+  );
 
-  const allowedCompanyOptions = companyOptions.filter((c) => c.value !== companyId);
+  const allowedCompanyOptions = useMemo(
+    () => companyOptions.filter((c) => c.value !== companyId),
+    [companyOptions, companyId]
+  );
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -330,8 +335,8 @@ export default function UserCreateForm() {
             Jerarquía Organizacional
           </CardTitle>
           <CardDescription>
-            Define quién es el jefe directo y el encargado de entradas/salidas.
-            Estos datos se usan para el envío automático de correos al crear vales.
+            Define quién es el jefe directo. Se usa para la primera aprobación de vales
+            y para el envío automático de correos al crear vales.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -353,27 +358,7 @@ export default function UserCreateForm() {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">Recibe copia del correo al crear un vale</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Encargado de Entradas/Salidas</Label>
-              <Select
-                value={ioManagerId?.toString() ?? ''}
-                onValueChange={(val) => setIoManagerId(val ? parseInt(val) : undefined)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sin encargado asignado" />
-                </SelectTrigger>
-                <SelectContent>
-                  {allIndividuals.map((ind) => (
-                    <SelectItem key={ind.id} value={ind.id.toString()}>
-                      {ind.name} {ind.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">Recibe copia del correo al crear un vale (por defecto: Hocejo)</p>
+              <p className="text-xs text-muted-foreground">Aprueba (1er nivel) y recibe copia del correo al crear un vale</p>
             </div>
           </div>
         </CardContent>

@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react';
 import { Check, ChevronDown, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 interface Option {
@@ -115,23 +114,25 @@ export function MultiSelect({
                 return (
                   <div
                     key={option.value}
+                    role="button"
+                    tabIndex={0}
                     className="flex items-center gap-2 rounded-sm px-2 py-2 text-sm cursor-pointer hover:bg-accent hover:text-accent-foreground"
                     onClick={() => handleToggle(option.value)}
                   >
-                    <Checkbox
-                      checked={isSelected}
-                      onCheckedChange={() => handleToggle(option.value)}
-                      onClick={(e) => e.stopPropagation()}
-                      id={`multi-opt-${option.value}`}
-                    />
-                    <label
-                      htmlFor={`multi-opt-${option.value}`}
-                      className="flex-1 cursor-pointer"
-                      onClick={(e) => e.preventDefault()}
+                    {/* Indicador visual propio (sin Radix Checkbox para evitar el bucle de
+                        compose-refs bajo React 19) */}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        'flex h-4 w-4 flex-shrink-0 items-center justify-center rounded border',
+                        isSelected
+                          ? 'bg-primary border-primary text-primary-foreground'
+                          : 'border-input'
+                      )}
                     >
-                      {option.label}
-                    </label>
-                    {isSelected && <Check className="h-4 w-4 text-primary flex-shrink-0" />}
+                      {isSelected && <Check className="h-3 w-3" />}
+                    </span>
+                    <span className="flex-1">{option.label}</span>
                   </div>
                 );
               })}
