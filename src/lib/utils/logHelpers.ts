@@ -20,7 +20,31 @@ export const transformLogsToTableRows = (
 ): LogTableRow[] => {
   const rows: LogTableRow[] = [];
 
-  // 1. Agregar out_log (salida) PRIMERO si existe
+  // 1. Aprobación de jefe directo (1er nivel)
+  if (logsData.supervisor_approval) {
+    rows.push({
+      id: 0,
+      log_type: 'supervisor_approval',
+      status: 'APPROVED',
+      responsible_name: logsData.supervisor_approval.approved_by_name || 'N/D',
+      observations: logsData.supervisor_approval.approved_at ? '-' : 'Fecha no registrada',
+      created_at: logsData.supervisor_approval.approved_at || '',
+    });
+  }
+
+  // 2. Aprobación de contraloría (2do nivel)
+  if (logsData.io_approval) {
+    rows.push({
+      id: 0,
+      log_type: 'io_approval',
+      status: 'APPROVED',
+      responsible_name: logsData.io_approval.approved_by_name || 'N/D',
+      observations: logsData.io_approval.approved_at ? '-' : 'Fecha no registrada',
+      created_at: logsData.io_approval.approved_at || '',
+    });
+  }
+
+  // 3. out_log (salida validada por vigilancia)
   if (logsData.out_log) {
     rows.push({
       id: logsData.out_log.id,
@@ -32,9 +56,8 @@ export const transformLogsToTableRows = (
     });
   }
 
-  // 2. Agregar entry_log (entrada) DESPUÉS si existe
+  // 4. entry_log (entrada/recepción)
   if (logsData.entry_log) {
-    // Combinar notas y missing_items en observaciones
     const observations: string[] = [];
     if (logsData.entry_log.notes) {
       observations.push(logsData.entry_log.notes);
@@ -53,7 +76,13 @@ export const transformLogsToTableRows = (
     });
   }
 
-  return rows;
+  // Orden cronológico ascendente por fecha. Las filas sin fecha (aprobaciones
+  // de vales históricos) quedan al inicio, que es su orden lógico.
+  const toMs = (s: string) => {
+    const t = s ? new Date(s).getTime() : 0;
+    return Number.isNaN(t) ? 0 : t;
+  };
+  return rows.sort((a, b) => toMs(a.created_at) - toMs(b.created_at));
 };
 
 /**

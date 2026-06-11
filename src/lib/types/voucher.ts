@@ -200,7 +200,14 @@ export interface ConfirmEntryRequest {
 // Enums para estados de logs
 export type EntryStatus = 'COMPLETE' | 'INCOMPLETE' | 'DAMAGED';
 export type ValidationStatus = 'APPROVED' | 'REJECTED' | 'OBSERVATION';
-export type LogType = 'entry_log' | 'out_log';
+export type LogType = 'supervisor_approval' | 'io_approval' | 'out_log' | 'entry_log';
+
+// Registro de aprobación (datos persistidos en el propio voucher)
+export interface ApprovalLogEntry {
+  approved_by_id: number;
+  approved_by_name: string | null;
+  approved_at: string | null; // null en vales aprobados antes de la feature
+}
 
 // Entry Log (Registro de Entrada)
 export interface EntryLog {
@@ -236,6 +243,8 @@ export interface VoucherLogsResponse {
   folio: string;
   entry_log: EntryLog | null;
   out_log: OutLog | null;
+  supervisor_approval?: ApprovalLogEntry | null;
+  io_approval?: ApprovalLogEntry | null;
 }
 
 // Tipo unificado para renderizar en tabla
@@ -262,8 +271,10 @@ export const VALIDATION_STATUS_NAMES: Record<ValidationStatus, string> = {
 };
 
 export const LOG_TYPE_NAMES: Record<LogType, string> = {
-  entry_log: 'Entrada de Material',
+  supervisor_approval: 'Aprobación Jefe Directo',
+  io_approval: 'Aprobación Contraloría',
   out_log: 'Validación de Salida',
+  entry_log: 'Entrada de Material',
 };
 
 // Helpers

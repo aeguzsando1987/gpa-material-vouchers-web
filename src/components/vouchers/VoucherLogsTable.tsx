@@ -103,7 +103,8 @@ export default function VoucherLogsTable({ voucherId }: VoucherLogsTableProps) {
               No hay transacciones registradas para este vale.
             </p>
             <p className="text-xs text-neutral-400 mt-1">
-              Los logs aparecerán cuando se valide la salida o se confirme la entrada.
+              Los registros aparecerán conforme se apruebe el vale (jefe directo y
+              contraloría) y se valide la salida o entrada.
             </p>
           </div>
         </CardContent>
