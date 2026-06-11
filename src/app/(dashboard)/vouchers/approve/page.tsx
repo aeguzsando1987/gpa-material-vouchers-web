@@ -221,15 +221,26 @@ export default function ApproveVouchersPage() {
                             </>
                           )}
                           {voucher.status === 'PENDING_IO_APPROVAL' && userIsIOManager && (
-                            <Button
-                              size="sm"
-                              variant="default"
-                              onClick={() => handleApproveIOClick(voucher.id)}
-                              className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Aprobación Contraloría
-                            </Button>
+                            <>
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => handleApproveIOClick(voucher.id)}
+                                className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                Aprobación Contraloría
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleCancelClick(voucher.id)}
+                                className="cursor-pointer bg-red-600 hover:bg-red-700 text-white transition-colors"
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                Rechazar
+                              </Button>
+                            </>
                           )}
                         </TableCell>
                       </TableRow>

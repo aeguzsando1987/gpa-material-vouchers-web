@@ -65,8 +65,13 @@ export default function VoucherActions({ voucher }: VoucherActionsProps) {
   // y el usuario es contralor (io manager)
   const showApproveIOButton = isPendingIO && userIsIOManager;
 
-  // Botón CANCELAR: si status=PENDING, PENDING_IO_APPROVAL o APPROVED y usuario tiene permisos
-  const showCancelButton = (isPending || isPendingIO || isApproved) && userCanApprove;
+  // Botón CANCELAR:
+  // - PENDING / APPROVED: cancelación normal, requiere permiso de aprobación por rol
+  // - PENDING_IO_APPROVAL: es un RECHAZO DE CONTRALORÍA, exclusivo de contralores
+  //   (io manager) — mismo gate que la 2ª aprobación en el backend
+  const showCancelButton =
+    ((isPending || isApproved) && userCanApprove) ||
+    (isPendingIO && userIsIOManager);
 
   // Botón EDITAR: solo si status=PENDING
   const showEditButton = isPending;
