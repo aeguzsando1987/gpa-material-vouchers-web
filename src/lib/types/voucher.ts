@@ -200,13 +200,29 @@ export interface ConfirmEntryRequest {
 // Enums para estados de logs
 export type EntryStatus = 'COMPLETE' | 'INCOMPLETE' | 'DAMAGED';
 export type ValidationStatus = 'APPROVED' | 'REJECTED' | 'OBSERVATION';
-export type LogType = 'supervisor_approval' | 'io_approval' | 'out_log' | 'entry_log';
+export type LogType =
+  | 'supervisor_approval'
+  | 'io_approval'
+  | 'out_log'
+  | 'entry_log'
+  | 'supervisor_rejection' // cancelación desde PENDING (rechazo jefe directo)
+  | 'io_rejection' // cancelación desde PENDING_IO_APPROVAL (rechazo contraloría)
+  | 'cancellation'; // cancelación desde APPROVED (u otro estado)
 
 // Registro de aprobación (datos persistidos en el propio voucher)
 export interface ApprovalLogEntry {
   approved_by_id: number;
   approved_by_name: string | null;
   approved_at: string | null; // null en vales aprobados antes de la feature
+}
+
+// Registro de cancelación / rechazo (datos persistidos en el propio voucher)
+export interface CancellationLogEntry {
+  cancelled_by_id: number | null;
+  cancelled_by_name: string | null;
+  cancelled_at: string | null; // null en cancelaciones históricas
+  cancelled_from_status: string | null; // estado previo: define la capacidad del rechazo
+  cancellation_reason: string | null;
 }
 
 // Entry Log (Registro de Entrada)
@@ -245,13 +261,14 @@ export interface VoucherLogsResponse {
   out_log: OutLog | null;
   supervisor_approval?: ApprovalLogEntry | null;
   io_approval?: ApprovalLogEntry | null;
+  cancellation?: CancellationLogEntry | null;
 }
 
 // Tipo unificado para renderizar en tabla
 export interface LogTableRow {
   id: number;
   log_type: LogType;
-  status: EntryStatus | ValidationStatus;
+  status: EntryStatus | ValidationStatus | 'CANCELLED';
   responsible_name: string;
   observations: string;
   created_at: string;
@@ -275,6 +292,9 @@ export const LOG_TYPE_NAMES: Record<LogType, string> = {
   io_approval: 'Aprobación Contraloría',
   out_log: 'Validación de Salida',
   entry_log: 'Entrada de Material',
+  supervisor_rejection: 'Rechazo Jefe Directo',
+  io_rejection: 'Rechazo Contraloría',
+  cancellation: 'Cancelación',
 };
 
 // Helpers

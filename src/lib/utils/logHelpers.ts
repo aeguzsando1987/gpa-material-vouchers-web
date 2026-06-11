@@ -44,6 +44,28 @@ export const transformLogsToTableRows = (
     });
   }
 
+  // 2b. Cancelación / rechazo. La capacidad se deriva del estado previo:
+  //  PENDING -> rechazo jefe directo, PENDING_IO_APPROVAL -> rechazo contraloría,
+  //  cualquier otro (APPROVED) -> cancelación.
+  if (logsData.cancellation) {
+    const c = logsData.cancellation;
+    const cancelLogType: LogType =
+      c.cancelled_from_status === 'PENDING'
+        ? 'supervisor_rejection'
+        : c.cancelled_from_status === 'PENDING_IO_APPROVAL'
+        ? 'io_rejection'
+        : 'cancellation';
+
+    rows.push({
+      id: 0,
+      log_type: cancelLogType,
+      status: 'CANCELLED',
+      responsible_name: c.cancelled_by_name || 'N/D',
+      observations: c.cancellation_reason || (c.cancelled_at ? '-' : 'Fecha no registrada'),
+      created_at: c.cancelled_at || '',
+    });
+  }
+
   // 3. out_log (salida validada por vigilancia)
   if (logsData.out_log) {
     rows.push({
@@ -100,7 +122,7 @@ export const getStatusBadgeVariant = (
   }
 
   // Estados negativos (rojo/destructive)
-  if (status === 'REJECTED' || status === 'DAMAGED') {
+  if (status === 'REJECTED' || status === 'DAMAGED' || status === 'CANCELLED') {
     return 'destructive';
   }
 
@@ -123,6 +145,12 @@ export const getStatusDisplayName = (
   status: EntryStatus | ValidationStatus | string,
   logType: LogType
 ): string => {
+  // Cancelaciones/rechazos: el estado del badge es CANCELLED
+  if (status === 'CANCELLED') {
+    return logType === 'supervisor_rejection' || logType === 'io_rejection'
+      ? 'Rechazado'
+      : 'Cancelado';
+  }
   if (logType === 'entry_log') {
     return ENTRY_STATUS_NAMES[status as EntryStatus] || status;
   } else {
@@ -147,7 +175,7 @@ export const getBadgeColorClasses = (
   }
 
   // Estados NO OK (rojo)
-  if (status === 'REJECTED' || status === 'DAMAGED' || status === 'INCOMPLETE' || status === 'OBSERVATION') {
+  if (status === 'REJECTED' || status === 'DAMAGED' || status === 'INCOMPLETE' || status === 'OBSERVATION' || status === 'CANCELLED') {
     return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 border-red-200 dark:border-red-800';
   }
 
