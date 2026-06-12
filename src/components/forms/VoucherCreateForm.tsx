@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Info } from 'lucide-react';
 
 import { useCreateVoucher } from '@/hooks/useVouchers';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -38,7 +38,7 @@ const voucherCreateSchema = z.object({
   delivered_by_id: z.number().min(1, 'Responsable requerido'),
   is_intercompany: z.boolean(),
   estimated_return_date: z.string().optional(),
-  notes: z.string().optional(),
+  notes: z.string().trim().min(1, 'Requiere observaciones y referencias para su salida'),
   internal_notes: z.string().optional(),
 }).refine((data) => {
   // Si es EXIT_WITH_RETURN, estimated_return_date es obligatorio
@@ -110,12 +110,14 @@ export default function VoucherCreateForm() {
       form_voucher_type: 'EXIT_WITHOUT_RETURN',
       is_intercompany: false,
       delivered_by_id: user?.individual_id || 1, // ID del individual del usuario actual
+      notes: '', // Requerido: arranca vacío para que muestre el mensaje de validación propio
     },
   });
 
   const selectedFormType = watch('form_voucher_type');
   const selectedCompanyId = watch('company_id');
   const isIntercompany = watch('is_intercompany');
+  const isEntry = selectedFormType === 'ENTRY';
 
   // Obtener TODAS las sucursales (sin filtrar por empresa)
   const { data: branchesResponse } = useBranches(1, 100, true);
@@ -127,6 +129,14 @@ export default function VoucherCreateForm() {
       setValue('delivered_by_id', user.individual_id);
     }
   }, [user?.individual_id, setValue]);
+
+  // En vales de Entrada no aplica la Sucursal Destino: limpiar valor previo
+  // para no enviar al backend un destino que el usuario ya no puede editar.
+  useEffect(() => {
+    if (isEntry) {
+      setValue('destination_branch_id', undefined);
+    }
+  }, [isEntry, setValue]);
 
   // Memoizar handler de details para prevenir re-renders innecesarios (Bug 4)
   const handleDetailsChange = useCallback((newDetails: VoucherDetailDraft[]) => {
@@ -233,8 +243,17 @@ export default function VoucherCreateForm() {
     }
   };
 
+  // Mostrar aviso visible (toast superior derecha) cuando la validación falla al guardar
+  const onInvalid = (formErrors: typeof errors) => {
+    if (formErrors.notes) {
+      toast.error('No se agregaron observaciones del vale. Captura observaciones y referencias para su salida.');
+      return;
+    }
+    toast.error('Revisa los campos marcados: hay información requerida pendiente.');
+  };
+
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-6">
       {/* Información General */}
       <Card>
         <CardHeader>
@@ -329,11 +348,18 @@ export default function VoucherCreateForm() {
 
             {/* Sucursal Destino */}
             <div className="space-y-2">
-              <Label htmlFor="destination_branch_id">Sucursal Destino (opcional)</Label>
+              <Label htmlFor="destination_branch_id">
+                Sucursal Destino (opcional)
+                {isEntry && (
+                  <span className="text-sm text-muted-foreground ml-2">
+                    No aplica para vales de entrada
+                  </span>
+                )}
+              </Label>
               <Select
                 value={watch('destination_branch_id')?.toString()}
                 onValueChange={(value) => setValue('destination_branch_id', parseInt(value))}
-                disabled={!branches}
+                disabled={!branches || isEntry}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona sucursal destino" />
@@ -354,11 +380,13 @@ export default function VoucherCreateForm() {
             {/* Destino Externo - SIEMPRE visible */}
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="outer_destination">
-                Destino Externo (opcional)
+                {isEntry ? 'Origen Externo (opcional)' : 'Destino Externo (opcional)'}
                 <span className="text-sm text-muted-foreground ml-2">
-                  {isIntercompany
-                    ? 'Destino externo para transferencia intercompañías'
-                    : 'Para destinos fuera de sucursales internas'
+                  {isEntry
+                    ? 'Para orígenes fuera de sucursales internas'
+                    : isIntercompany
+                      ? 'Destino externo para transferencia intercompañías'
+                      : 'Para destinos fuera de sucursales internas'
                   }
                 </span>
               </Label>
@@ -434,7 +462,18 @@ export default function VoucherCreateForm() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="notes">Notas (visibles para todos)</Label>
+            <div className="flex items-center gap-1.5">
+              <Label htmlFor="notes">Notas *</Label>
+              <span className="group relative inline-flex">
+                <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                <span
+                  role="tooltip"
+                  className="pointer-events-none absolute bottom-full left-0 z-10 mb-1 w-72 rounded-md bg-gray-900 px-3 py-2 text-xs leading-snug text-white opacity-0 shadow-lg transition-opacity duration-150 group-hover:opacity-100"
+                >
+                  Ingresa referencias de vales como orden de trabajo, factura o folio de vale de salida de almacén.
+                </span>
+              </span>
+            </div>
             <Controller
               name="notes"
               control={control}
