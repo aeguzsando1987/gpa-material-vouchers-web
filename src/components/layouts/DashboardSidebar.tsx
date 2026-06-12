@@ -88,19 +88,19 @@ const menuItems: MenuItem[] = [
     label: 'Compañías',
     href: '/misc/companies',
     icon: Building2,
-    roles: [1, 2, 3],
+    roles: [1], // Solo Admin
   },
   {
     label: 'Sucursales',
     href: '/misc/branches',
     icon: MapPin,
-    roles: [1, 2, 3],
+    roles: [1], // Solo Admin
   },
   {
     label: 'Productos',
     href: '/misc/products',
     icon: Package,
-    roles: [1, 2, 3],
+    roles: [1], // Solo Admin
   },
 ];
 
